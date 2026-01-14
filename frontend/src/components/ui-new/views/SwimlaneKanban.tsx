@@ -7,13 +7,23 @@ import {
   PlusIcon,
   DotsThreeIcon,
   SidebarSimpleIcon,
+  FolderIcon,
 } from '@phosphor-icons/react';
 import { ActionPanelContainer } from '@/components/ui-new/containers/ActionPanelContainer';
 import { AnimatePresence, motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import type { GroupedProjects } from '@/hooks/useAllBoards';
-import type { Project, ProjectGroup, TaskStatus, TaskWithAttemptStatus } from 'shared/types';
-import { statusLabels, statusBoardColors, statusColumnBgColors } from '@/utils/statusLabels';
+import type {
+  Project,
+  ProjectGroup,
+  TaskStatus,
+  TaskWithAttemptStatus,
+} from 'shared/types';
+import {
+  statusLabels,
+  statusBoardColors,
+  statusColumnBgColors,
+} from '@/utils/statusLabels';
 import { ProjectSwimlane } from '@/components/ui-new/containers/ProjectSwimlane';
 import { InlineGroupCreator } from '@/components/ui-new/primitives/InlineGroupCreator';
 import {
@@ -21,8 +31,13 @@ import {
   type FilterState,
   type DisplayState,
 } from '@/components/ui-new/primitives/FilterDisplayControls';
-import { useAggregateTaskCountsProvider, useAggregateTaskCounts } from '@/hooks/useAggregateTaskCounts';
+import {
+  useAggregateTaskCountsProvider,
+  useAggregateTaskCounts,
+} from '@/hooks/useAggregateTaskCounts';
 import type { SidebarWorkspace } from '@/components/ui-new/hooks/useWorkspaces';
+import { EmptyState } from '@/components/ui-new/primitives/EmptyState';
+import { SwimlaneRowSkeleton } from '@/components/ui-new/primitives/Skeleton';
 
 const STATUS_ORDER: TaskStatus[] = [
   'todo',
@@ -39,50 +54,63 @@ function StatusHeader({ status }: { status: TaskStatus }) {
   return (
     <div
       className={cn(
-        'group/col flex items-center gap-1.5',
-        'py-1.5 px-2',
-        'border-l border-panel/40'
+        'group/col flex items-center gap-2',
+        'py-2 px-3',
+        'border-l border-panel/30',
+        'transition-colors duration-150'
       )}
       style={{ backgroundColor: statusColumnBgColors[status] }}
     >
       <span
-        className="h-1.5 w-1.5 rounded-full shrink-0"
+        className="h-2 w-2 rounded-full shrink-0 ring-2 ring-white/10"
         style={{ backgroundColor: `hsl(var(${statusBoardColors[status]}))` }}
       />
-      <span className="text-[10px] text-normal/80 font-medium uppercase tracking-wide">
+      <span className="text-[11px] text-normal/90 font-medium uppercase tracking-wide">
         {statusLabels[status]}
       </span>
-      <span className="text-[10px] text-low/50 tabular-nums">
+      <span
+        className={cn(
+          'text-[10px] tabular-nums px-1.5 py-0.5 rounded-sm',
+          'bg-panel/20 text-low/70',
+          'transition-colors duration-150'
+        )}
+      >
         {isLoading ? '—' : count}
       </span>
-      <div className={cn(
-        'flex items-center gap-0.5 ml-auto',
-        'opacity-0 group-hover/col:opacity-100',
-        'transition-opacity duration-100'
-      )}>
+      <div
+        className={cn(
+          'flex items-center gap-1 ml-auto',
+          'opacity-0 group-hover/col:opacity-100',
+          'transition-opacity duration-150'
+        )}
+      >
         <button
           type="button"
           className={cn(
-            'p-0.5 rounded-sm',
+            'icon-btn',
+            'p-1 rounded-sm',
             'text-low/60 hover:text-normal',
-            'hover:bg-panel/30',
-            'transition-colors duration-100'
+            'hover:bg-panel/40',
+            'transition-all duration-150',
+            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/30'
           )}
           title="Column options"
         >
-          <DotsThreeIcon weight="bold" className="size-3" />
+          <DotsThreeIcon weight="bold" className="size-3.5" />
         </button>
         <button
           type="button"
           className={cn(
-            'p-0.5 rounded-sm',
+            'icon-btn',
+            'p-1 rounded-sm',
             'text-low/60 hover:text-normal',
-            'hover:bg-panel/30',
-            'transition-colors duration-100'
+            'hover:bg-panel/40',
+            'transition-all duration-150',
+            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/30'
           )}
           title="Add task"
         >
-          <PlusIcon className="size-3" />
+          <PlusIcon className="size-3.5" />
         </button>
       </div>
     </div>
@@ -106,7 +134,11 @@ interface SwimlaneKanbanProps {
   onMoveToGroup: (projectId: string, groupId: string | null) => void;
   onOpenBoard: (projectId: string) => void;
   onCreateGroup: () => void;
-  onStatusChange: (taskId: string, newStatus: TaskStatus, task: TaskWithAttemptStatus) => void;
+  onStatusChange: (
+    taskId: string,
+    newStatus: TaskStatus,
+    task: TaskWithAttemptStatus
+  ) => void;
   // Inline group creation props
   isCreatingGroup: boolean;
   newGroupName: string;
@@ -183,7 +215,10 @@ function SwimlaneKanbanContent({
     for (const ws of workspaces) {
       if (filterState.workspaceFilter === 'active' && ws.isRunning) {
         taskIds.add(ws.taskId);
-      } else if (filterState.workspaceFilter === 'in-review' && ws.prStatus === 'open') {
+      } else if (
+        filterState.workspaceFilter === 'in-review' &&
+        ws.prStatus === 'open'
+      ) {
         taskIds.add(ws.taskId);
       }
     }
@@ -199,7 +234,9 @@ function SwimlaneKanbanContent({
       result = result
         .map(({ group, projects }) => ({
           group,
-          projects: projects.filter((p) => p.id === filterState.selectedProjectId),
+          projects: projects.filter(
+            (p) => p.id === filterState.selectedProjectId
+          ),
         }))
         .filter(({ projects }) => projects.length > 0);
     }
@@ -222,8 +259,48 @@ function SwimlaneKanbanContent({
 
   if (isLoading) {
     return (
-      <div className="h-full flex-1 flex items-center justify-center bg-primary text-low">
-        Loading boards...
+      <div className="h-full flex-1 overflow-hidden bg-primary">
+        {/* Skeleton header */}
+        <div
+          className={cn(
+            'sticky top-0 z-20',
+            'flex items-center gap-3 px-3 py-2',
+            'bg-primary/95 backdrop-blur-sm',
+            'border-b border-panel/30'
+          )}
+        >
+          <div className="skeleton h-7 w-48 rounded-md" />
+          <div className="flex items-center gap-2 ml-auto">
+            <div className="skeleton h-6 w-16 rounded-sm" />
+            <div className="skeleton h-6 w-20 rounded-sm" />
+          </div>
+        </div>
+        {/* Skeleton status header */}
+        <div
+          className={cn(
+            'sticky top-[40px] z-10',
+            'grid grid-cols-[180px_repeat(5,minmax(120px,1fr))]',
+            'bg-primary/98 backdrop-blur-sm',
+            'border-b border-panel/40'
+          )}
+        >
+          <div className="py-2 px-3" />
+          {STATUS_ORDER.map((status) => (
+            <div
+              key={status}
+              className="py-2 px-3 border-l border-panel/30 flex items-center gap-2"
+            >
+              <div className="skeleton size-2 rounded-full" />
+              <div className="skeleton h-3 w-16 rounded-sm" />
+            </div>
+          ))}
+        </div>
+        {/* Skeleton rows */}
+        <div className="pb-8">
+          {[...Array(4)].map((_, i) => (
+            <SwimlaneRowSkeleton key={i} />
+          ))}
+        </div>
       </div>
     );
   }
@@ -235,38 +312,46 @@ function SwimlaneKanbanContent({
   return (
     <div className="h-full flex-1 overflow-auto bg-primary">
       {/* Header with search and controls */}
-      <div className={cn(
-        'sticky top-0 z-20',
-        'flex items-center gap-3 px-3 py-2',
-        'bg-primary/95 backdrop-blur-sm',
-        'border-b border-panel/30'
-      )}>
+      <div
+        className={cn(
+          'sticky top-0 z-20',
+          'flex items-center gap-3 px-4 py-2.5',
+          'bg-primary/95 backdrop-blur-sm',
+          'border-b border-panel/20',
+          'shadow-sm shadow-black/[0.02]'
+        )}
+      >
         {/* Sidebar toggle button - only show when sidebar is hidden */}
         {!isLeftSidebarVisible && onToggleLeftSidebar && (
           <button
             type="button"
             onClick={onToggleLeftSidebar}
             className={cn(
-              'p-1.5 rounded-sm',
+              'icon-btn p-1.5 rounded-md',
               'text-low hover:text-normal',
-              'hover:bg-secondary/60',
-              'transition-colors duration-100'
+              'hover:bg-panel/40',
+              'transition-all duration-150',
+              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/30'
             )}
             title="Show sidebar"
           >
             <SidebarSimpleIcon className="size-4" />
           </button>
         )}
-        {/* Search input */}
-        <div className={cn(
-          'flex items-center gap-2 flex-1 max-w-sm',
-          'bg-secondary/60 rounded-sm',
-          'border border-panel/30',
-          'px-2 py-1',
-          'focus-within:border-brand/30 focus-within:bg-secondary/80',
-          'transition-all duration-150'
-        )}>
-          <MagnifyingGlassIcon className="size-3.5 text-low/60 shrink-0" />
+        {/* Search input - Linear style */}
+        <div
+          className={cn(
+            'input-field flex-1 max-w-sm',
+            'flex items-center gap-2',
+            'bg-secondary/50 rounded-md',
+            'border border-panel/20',
+            'px-2.5 py-1.5',
+            'focus-within:border-brand/30 focus-within:bg-secondary/70',
+            'focus-within:ring-2 focus-within:ring-brand/10',
+            'transition-all duration-150'
+          )}
+        >
+          <MagnifyingGlassIcon className="size-4 text-low/50 shrink-0" />
           <input
             type="text"
             value={searchQuery}
@@ -275,10 +360,19 @@ function SwimlaneKanbanContent({
             className={cn(
               'flex-1 bg-transparent',
               'text-xs text-normal',
-              'placeholder:text-low/50',
+              'placeholder:text-low/40',
               'focus:outline-none'
             )}
           />
+          {searchQuery && (
+            <button
+              type="button"
+              onClick={() => onSearchChange('')}
+              className="text-low/50 hover:text-low transition-colors"
+            >
+              <span className="text-[10px]">Clear</span>
+            </button>
+          )}
         </div>
 
         {/* Filter and Display controls */}
@@ -293,13 +387,13 @@ function SwimlaneKanbanContent({
         />
 
         {/* Divider */}
-        <div className="h-4 w-px bg-panel/40" />
+        <div className="divider-vertical" />
 
         {/* Action Panel for bulk operations */}
         <ActionPanelContainer />
 
         {/* Divider */}
-        <div className="h-4 w-px bg-panel/40" />
+        <div className="divider-vertical" />
 
         {/* Actions */}
         <div className="flex items-center gap-1">
@@ -307,10 +401,12 @@ function SwimlaneKanbanContent({
             type="button"
             onClick={onCreateGroup}
             className={cn(
-              'flex items-center gap-1.5 px-2 py-1 rounded-sm',
-              'text-xs text-low',
-              'hover:text-normal hover:bg-secondary/60',
-              'transition-colors duration-100'
+              'btn-ghost',
+              'flex items-center gap-1.5 px-2.5 py-1.5 rounded-md',
+              'text-xs text-low font-medium',
+              'hover:text-normal hover:bg-panel/30',
+              'transition-all duration-150',
+              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/30'
             )}
           >
             <PlusIcon className="size-3.5" />
@@ -320,21 +416,23 @@ function SwimlaneKanbanContent({
             type="button"
             onClick={allGroupsExpanded ? onCollapseAll : onExpandAll}
             className={cn(
-              'flex items-center gap-1.5 px-2 py-1 rounded-sm',
-              'text-xs text-low',
-              'hover:text-normal hover:bg-secondary/60',
-              'transition-colors duration-100'
+              'btn-ghost',
+              'flex items-center gap-1.5 px-2.5 py-1.5 rounded-md',
+              'text-xs text-low font-medium',
+              'hover:text-normal hover:bg-panel/30',
+              'transition-all duration-150',
+              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/30'
             )}
           >
             {allGroupsExpanded ? (
               <>
                 <ArrowsInIcon className="size-3.5" />
-                <span>Collapse all</span>
+                <span>Collapse</span>
               </>
             ) : (
               <>
                 <ArrowsOutIcon className="size-3.5" />
-                <span>Expand all</span>
+                <span>Expand</span>
               </>
             )}
           </button>
@@ -342,15 +440,18 @@ function SwimlaneKanbanContent({
       </div>
 
       {/* Single sticky status header */}
-      <div className={cn(
-        'sticky top-[40px] z-10',
-        'flex',
-        'min-w-[880px]',
-        'bg-primary/98 backdrop-blur-sm',
-        'border-b border-panel/40'
-      )}>
+      <div
+        className={cn(
+          'sticky top-[44px] z-10',
+          'flex',
+          'min-w-[880px]',
+          'bg-primary/98 backdrop-blur-sm',
+          'border-b border-panel/30',
+          'shadow-sm shadow-black/[0.02]'
+        )}
+      >
         {/* Empty first cell - sticky on horizontal scroll to align with project names */}
-        <div className="w-[180px] shrink-0 py-1.5 px-2 sticky left-0 z-10 bg-primary" />
+        <div className="w-[180px] shrink-0 py-2 px-3 sticky left-0 z-10 bg-primary" />
         {/* Status column headers */}
         <div className="grid grid-cols-5 flex-1" style={{ minWidth: '700px' }}>
           {STATUS_ORDER.map((status) => (
@@ -371,44 +472,74 @@ function SwimlaneKanbanContent({
         />
 
         {filteredGroupedProjects.length === 0 && !isCreatingGroup ? (
-          <div className="text-center py-12 text-low/60 text-xs">
-            {searchQuery ? 'No boards match your search' : 'No boards yet'}
-          </div>
+          <EmptyState
+            variant={searchQuery ? 'no-search-results' : 'no-boards'}
+            action={
+              !searchQuery
+                ? {
+                    label: 'Create your first board',
+                    onClick: onCreateGroup,
+                  }
+                : undefined
+            }
+          />
         ) : (
           filteredGroupedProjects.map(({ group, projects }) => {
             const groupKey = group?.id ?? 'ungrouped';
             const isGroupExpanded = expandedGroups.has(groupKey);
 
             return (
-              <div key={groupKey} className="border-b border-panel/10 last:border-b-0">
+              <div
+                key={groupKey}
+                className="border-b border-panel/15 last:border-b-0"
+              >
                 {/* Group header */}
-                <div className={cn(
-                  'flex items-center justify-between',
-                  'px-2 py-1.5',
-                  'bg-secondary/30',
-                  'border-b border-panel/20'
-                )}>
+                <div
+                  className={cn(
+                    'group/header flex items-center justify-between',
+                    'px-3 py-2',
+                    'bg-secondary/20',
+                    'border-b border-panel/15',
+                    'hover:bg-secondary/30',
+                    'transition-colors duration-150'
+                  )}
+                >
                   <button
                     type="button"
                     onClick={() => onToggleGroup(group?.id ?? null)}
-                    className="flex items-center gap-1.5 flex-1 text-left group"
+                    className={cn(
+                      'flex items-center gap-2 flex-1 text-left group',
+                      'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/30 focus-visible:ring-offset-1',
+                      'rounded-sm'
+                    )}
                   >
                     <CaretDownIcon
                       weight="fill"
                       className={cn(
-                        'size-2.5 text-low/60',
-                        'transition-transform duration-150 ease-out',
+                        'size-3 text-low/50',
+                        'transition-transform duration-200 ease-out',
                         !isGroupExpanded && '-rotate-90'
                       )}
                     />
-                    <span className={cn(
-                      'text-[10px] font-medium uppercase tracking-wide',
-                      'text-low/70 group-hover:text-normal',
-                      'transition-colors duration-100'
-                    )}>
+                    <FolderIcon
+                      weight="duotone"
+                      className="size-3.5 text-low/60"
+                    />
+                    <span
+                      className={cn(
+                        'text-[11px] font-semibold uppercase tracking-wide',
+                        'text-low/80 group-hover:text-normal',
+                        'transition-colors duration-150'
+                      )}
+                    >
                       {group?.name ?? 'Ungrouped'}
                     </span>
-                    <span className="text-[10px] text-low/40 tabular-nums">
+                    <span
+                      className={cn(
+                        'text-[10px] tabular-nums px-1.5 py-0.5 rounded-sm',
+                        'bg-panel/20 text-low/60'
+                      )}
+                    >
                       {projects.length}
                     </span>
                   </button>
@@ -416,10 +547,12 @@ function SwimlaneKanbanContent({
                     type="button"
                     onClick={() => onExpandOnly(group?.id ?? null)}
                     className={cn(
-                      'px-1.5 py-0.5 rounded-sm',
-                      'text-[10px] text-low/40',
-                      'hover:text-normal hover:bg-panel/20',
-                      'transition-colors duration-100'
+                      'px-2 py-1 rounded-md',
+                      'text-[10px] font-medium text-low/50',
+                      'hover:text-normal hover:bg-panel/30',
+                      'opacity-0 group-hover/header:opacity-100',
+                      'transition-all duration-150',
+                      'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/30'
                     )}
                     title="Focus on this group"
                   >
@@ -438,9 +571,7 @@ function SwimlaneKanbanContent({
                     >
                       {/* Project rows */}
                       {projects.length === 0 ? (
-                        <div className="py-6 text-center text-[10px] text-low/40">
-                          No boards in this group
-                        </div>
+                        <EmptyState variant="no-group-items" size="sm" />
                       ) : (
                         projects.map((project) => (
                           <ProjectSwimlane
