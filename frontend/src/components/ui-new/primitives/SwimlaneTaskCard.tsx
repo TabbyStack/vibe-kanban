@@ -319,7 +319,7 @@ export function SwimlaneTaskCard({
           <p
             className={cn(
               'text-[10px] leading-relaxed',
-              'text-low/50 line-clamp-2',
+              'text-low/50',
               'group-hover/card:text-low/70',
               'transition-colors duration-150'
             )}

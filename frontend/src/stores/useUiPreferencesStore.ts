@@ -68,7 +68,8 @@ export type PersistKey =
   | `system:${string}`
   | `error:${string}`
   | `entry:${string}`
-  | `left-sidebar-team-${string}`;
+  | `left-sidebar-team-${string}`
+  | `project-expanded:${string}`;
 
 type State = {
   repoActions: Record<string, RepoAction>;
