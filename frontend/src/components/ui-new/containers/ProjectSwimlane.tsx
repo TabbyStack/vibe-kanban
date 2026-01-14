@@ -171,14 +171,14 @@ export function ProjectSwimlane({
 
   if (error) {
     return (
-      <div className="grid grid-cols-[180px_repeat(5,minmax(120px,1fr))] border-b border-panel">
-        <div className="p-half">
+      <div className="flex border-b border-panel">
+        <div className="w-[180px] shrink-0 p-half sticky left-0 z-10 bg-primary">
           <div className="flex items-center gap-half">
             <KanbanIcon weight="fill" className="size-icon-xs text-brand shrink-0" />
             <span className="text-xs text-normal font-medium">{project.name}</span>
           </div>
         </div>
-        <div className="col-span-5 p-base text-sm text-error border-l border-panel">
+        <div className="flex-1 p-base text-sm text-error border-l border-panel" style={{ minWidth: '700px' }}>
           Failed to load tasks
         </div>
       </div>
@@ -188,13 +188,14 @@ export function ProjectSwimlane({
   return (
     <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
       <div className={cn(
-        'group/row grid grid-cols-[180px_repeat(5,minmax(120px,1fr))]',
+        'group/row flex',
+        'min-w-[880px]',
         'border-b border-panel/20',
         'transition-colors duration-100',
         'hover:bg-panel/5'
       )}>
-        {/* Project name cell */}
-        <div className="px-2 py-1.5 flex items-center">
+        {/* Project name cell - sticky on horizontal scroll */}
+        <div className="w-[180px] shrink-0 px-2 py-1.5 flex items-center sticky left-0 z-10 bg-primary">
           <div className="flex items-center gap-1.5 flex-1 min-w-0">
             <KanbanIcon weight="fill" className="size-3.5 text-brand shrink-0" />
             <span className="text-xs text-normal font-medium truncate">{project.name}</span>
@@ -283,34 +284,36 @@ export function ProjectSwimlane({
           </div>
         </div>
 
-        {/* Status columns */}
-        {STATUS_ORDER.map((status) => {
-          const tasks = filteredTasksByStatus[status];
+        {/* Status columns - grid for equal widths */}
+        <div className="grid grid-cols-5 flex-1" style={{ minWidth: '700px' }}>
+          {STATUS_ORDER.map((status) => {
+            const tasks = filteredTasksByStatus[status];
 
-          return (
-            <StatusCell
-              key={status}
-              status={status}
-            >
-              {isLoading ? (
-                <div className="flex flex-col gap-1">
-                  <div className="h-8 bg-panel/20 rounded-sm animate-pulse" />
-                </div>
-              ) : tasks.length === 0 ? null : (
-                tasks.map((task) => (
-                  <SwimlaneTaskCard
-                    key={task.id}
-                    task={task}
-                    projectId={project.id}
-                    project={project}
-                    isSelected={selectedTaskId === task.id}
-                    onClick={() => onTaskClick(project.id, task.id)}
-                  />
-                ))
-              )}
-            </StatusCell>
-          );
-        })}
+            return (
+              <StatusCell
+                key={status}
+                status={status}
+              >
+                {isLoading ? (
+                  <div className="flex flex-col gap-1">
+                    <div className="h-8 bg-panel/20 rounded-sm animate-pulse" />
+                  </div>
+                ) : tasks.length === 0 ? null : (
+                  tasks.map((task) => (
+                    <SwimlaneTaskCard
+                      key={task.id}
+                      task={task}
+                      projectId={project.id}
+                      project={project}
+                      isSelected={selectedTaskId === task.id}
+                      onClick={() => onTaskClick(project.id, task.id)}
+                    />
+                  ))
+                )}
+              </StatusCell>
+            );
+          })}
+        </div>
       </div>
     </DndContext>
   );
