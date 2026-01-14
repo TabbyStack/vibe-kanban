@@ -5,6 +5,7 @@ import { cn } from '@/lib/utils';
 import { useBoardTasksOverview } from '@/hooks/useBoardTasksOverview';
 import { useRegisterProjectCounts } from '@/hooks/useAggregateTaskCounts';
 import { SwimlaneTaskCard } from '@/components/ui-new/primitives/SwimlaneTaskCard';
+import { ProjectHealthIndicator } from '@/components/ui-new/primitives/ProjectHealthIndicator';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -198,6 +199,9 @@ export function ProjectSwimlane({
           <div className="flex items-center gap-1.5 flex-1 min-w-0">
             <KanbanIcon weight="fill" className="size-3.5 text-brand shrink-0" />
             <span className="text-xs text-normal font-medium truncate">{project.name}</span>
+            {!isLoading && (
+              <ProjectHealthIndicator tasksByStatus={tasksByStatus} />
+            )}
             <span className="text-[10px] text-low/50 tabular-nums shrink-0">
               {isLoading ? '—' : filteredTotalCount}
             </span>
