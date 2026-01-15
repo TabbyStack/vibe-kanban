@@ -379,6 +379,88 @@ impl GhCli {
         )?;
         Self::parse_pr_checks(&raw)
     }
+
+    /// Get detailed CI failure information for a PR.
+    /// Returns a list of failed checks with their names and any available error output.
+    pub fn get_pr_ci_failures(&self, pr_url: &str) -> Result<Vec<CiFailureDetails>, GhCliError> {
+        let raw = self.run(
+            [
+                "pr",
+                "checks",
+                pr_url,
+                "--json",
+                "name,state,conclusion,detailsUrl",
+            ],
+            None,
+        )?;
+        Self::parse_pr_check_failures(&raw)
+    }
+
+    /// Get workflow run logs for failed runs.
+    /// This attempts to fetch logs from the GitHub API for a specific run.
+    pub fn get_run_logs(&self, owner: &str, repo: &str, run_id: i64) -> Result<String, GhCliError> {
+        // First get the failed jobs in this run
+        let jobs_raw = self.run(
+            [
+                "api",
+                &format!("repos/{owner}/{repo}/actions/runs/{run_id}/jobs"),
+            ],
+            None,
+        )?;
+
+        let failed_jobs = Self::parse_failed_jobs(&jobs_raw)?;
+
+        if failed_jobs.is_empty() {
+            return Ok("No failed jobs found in this run.".to_string());
+        }
+
+        // Collect log snippets from failed jobs
+        let mut logs = Vec::new();
+        for job in failed_jobs {
+            // Try to get the job logs
+            match self.run(
+                [
+                    "api",
+                    &format!("repos/{owner}/{repo}/actions/jobs/{}/logs", job.id),
+                ],
+                None,
+            ) {
+                Ok(log_content) => {
+                    // Truncate logs to a reasonable size (last 200 lines)
+                    let truncated: String = log_content
+                        .lines()
+                        .rev()
+                        .take(200)
+                        .collect::<Vec<_>>()
+                        .into_iter()
+                        .rev()
+                        .collect::<Vec<_>>()
+                        .join("\n");
+                    logs.push(format!(
+                        "=== Job: {} (conclusion: {}) ===\n{}",
+                        job.name, job.conclusion, truncated
+                    ));
+                }
+                Err(_) => {
+                    // If we can't get logs, still report the failure
+                    logs.push(format!(
+                        "=== Job: {} (conclusion: {}) ===\nUnable to fetch logs for this job.",
+                        job.name, job.conclusion
+                    ));
+                }
+            }
+        }
+
+        Ok(logs.join("\n\n"))
+    }
+}
+
+/// Details about a CI failure
+#[derive(Debug, Clone)]
+pub struct CiFailureDetails {
+    pub name: String,
+    pub conclusion: String,
+    pub details_url: Option<String>,
 }
 
 impl GhCli {
@@ -612,4 +694,96 @@ impl GhCli {
             Ok(CiStatus::Unknown)
         }
     }
+
+    /// Parse PR checks response to extract failed check details
+    fn parse_pr_check_failures(raw: &str) -> Result<Vec<CiFailureDetails>, GhCliError> {
+        #[derive(Deserialize)]
+        #[serde(rename_all = "camelCase")]
+        struct GhCheckWithDetails {
+            #[serde(default)]
+            name: String,
+            #[serde(default)]
+            state: String,
+            #[serde(default)]
+            conclusion: Option<String>,
+            details_url: Option<String>,
+        }
+
+        let checks: Vec<GhCheckWithDetails> = serde_json::from_str(raw.trim()).map_err(|err| {
+            GhCliError::UnexpectedOutput(format!(
+                "Failed to parse gh pr checks response: {err}; raw: {raw}"
+            ))
+        })?;
+
+        let failures: Vec<CiFailureDetails> = checks
+            .into_iter()
+            .filter(|check| {
+                let state = check.state.to_lowercase();
+                let conclusion = check.conclusion.as_deref().map(|s| s.to_lowercase());
+
+                // Check is completed and has a failure conclusion
+                state == "completed"
+                    && matches!(
+                        conclusion.as_deref(),
+                        Some("failure") | Some("cancelled") | Some("timed_out")
+                    )
+            })
+            .map(|check| CiFailureDetails {
+                name: check.name,
+                conclusion: check.conclusion.unwrap_or_else(|| "unknown".to_string()),
+                details_url: check.details_url,
+            })
+            .collect();
+
+        Ok(failures)
+    }
+
+    /// Parse failed jobs from workflow run jobs API response
+    fn parse_failed_jobs(raw: &str) -> Result<Vec<FailedJobInfo>, GhCliError> {
+        #[derive(Deserialize)]
+        struct JobsResponse {
+            #[serde(default)]
+            jobs: Vec<JobInfo>,
+        }
+
+        #[derive(Deserialize)]
+        struct JobInfo {
+            id: i64,
+            #[serde(default)]
+            name: String,
+            #[serde(default)]
+            conclusion: Option<String>,
+        }
+
+        let response: JobsResponse = serde_json::from_str(raw.trim()).map_err(|err| {
+            GhCliError::UnexpectedOutput(format!(
+                "Failed to parse workflow jobs response: {err}; raw: {raw}"
+            ))
+        })?;
+
+        let failed_jobs: Vec<FailedJobInfo> = response
+            .jobs
+            .into_iter()
+            .filter(|job| {
+                matches!(
+                    job.conclusion.as_deref(),
+                    Some("failure") | Some("cancelled") | Some("timed_out")
+                )
+            })
+            .map(|job| FailedJobInfo {
+                id: job.id,
+                name: job.name,
+                conclusion: job.conclusion.unwrap_or_else(|| "unknown".to_string()),
+            })
+            .collect();
+
+        Ok(failed_jobs)
+    }
+}
+
+/// Info about a failed job
+struct FailedJobInfo {
+    id: i64,
+    name: String,
+    conclusion: String,
 }

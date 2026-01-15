@@ -131,3 +131,14 @@ impl UnifiedPrComment {
         }
     }
 }
+
+/// Information about a CI failure
+#[derive(Debug, Clone)]
+pub struct CiFailureInfo {
+    /// Name of the check/workflow that failed
+    pub name: String,
+    /// The conclusion (e.g., "failure", "cancelled", "timed_out")
+    pub conclusion: String,
+    /// URL to view more details about the failure
+    pub details_url: Option<String>,
+}

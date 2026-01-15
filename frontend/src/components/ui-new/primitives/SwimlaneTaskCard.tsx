@@ -26,6 +26,7 @@ import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
+  TooltipProvider,
 } from '@/components/ui/tooltip';
 
 /**
@@ -202,138 +203,143 @@ export function SwimlaneTaskCard({
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40 focus-visible:ring-offset-1'
       )}
     >
-      <div className="flex flex-col gap-1">
-        <div className="flex items-start gap-1.5">
-          {/* Category icon badge */}
-          {categoryIndicator && (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <span className="shrink-0 text-[11px] leading-none mt-0.5 cursor-default">
-                  {categoryIndicator.icon}
-                </span>
-              </TooltipTrigger>
-              <TooltipContent side="top" className="text-xs">
-                <span>Category: {categoryIndicator.label}</span>
-              </TooltipContent>
-            </Tooltip>
-          )}
-          <span
-            className={cn(
-              'flex-1 text-xs leading-snug font-medium',
-              'text-normal',
-              'transition-colors duration-150',
-              isSelected && 'text-high',
-              'group-hover/card:text-high'
-            )}
-          >
-            {task.title}
-          </span>
-          <div className="flex items-center gap-1 shrink-0 mt-px">
-            {/* CI status indicator (only for open PRs) */}
-            {(() => {
-              const ciIndicator = getCiStatusIndicator(
-                task.ci_status,
-                task.pr_status
-              );
-              if (!ciIndicator) return null;
-              const CiIcon = ciIndicator.icon;
-              return (
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <span className="cursor-default">
-                      <CiIcon
-                        weight="fill"
-                        className={cn(
-                          'size-3',
-                          ciIndicator.color,
-                          ciIndicator.animate && 'animate-spin'
-                        )}
-                      />
-                    </span>
-                  </TooltipTrigger>
-                  <TooltipContent side="top" className="text-xs">
-                    <span>{ciIndicator.title}</span>
-                  </TooltipContent>
-                </Tooltip>
-              );
-            })()}
-            {/* PR status indicator */}
-            {(() => {
-              const prIndicator = getPrStatusIndicator(task.pr_status);
-              if (!prIndicator) return null;
-              const PrIcon = prIndicator.icon;
-              return (
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <span className="cursor-default">
-                      <PrIcon
-                        weight="fill"
-                        className={cn('size-3', prIndicator.color)}
-                      />
-                    </span>
-                  </TooltipTrigger>
-                  <TooltipContent side="top" className="text-xs">
-                    <span>{prIndicator.title}</span>
-                  </TooltipContent>
-                </Tooltip>
-              );
-            })()}
-            {task.has_in_progress_attempt && (
+      <TooltipProvider>
+        <div className="flex flex-col gap-1">
+          <div className="flex items-start gap-1.5">
+            {/* Category icon badge */}
+            {categoryIndicator && (
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <span className="cursor-default">
-                    <SpinnerIcon className="size-3 animate-spin text-info" />
+                  <span className="shrink-0 text-[11px] leading-none mt-0.5 cursor-default">
+                    {categoryIndicator.icon}
                   </span>
                 </TooltipTrigger>
                 <TooltipContent side="top" className="text-xs">
-                  <span>Task in progress</span>
+                  <span>Category: {categoryIndicator.label}</span>
                 </TooltipContent>
               </Tooltip>
             )}
-            {task.last_attempt_failed && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <span className="cursor-default">
-                    <XCircleIcon weight="fill" className="size-3 text-error" />
-                  </span>
-                </TooltipTrigger>
-                <TooltipContent side="top" className="text-xs">
-                  <span>Last attempt failed</span>
-                </TooltipContent>
-              </Tooltip>
-            )}
-            <DotsThreeIcon
-              weight="bold"
+            <span
               className={cn(
-                'size-3.5 text-low/60',
-                'opacity-0 group-hover/card:opacity-100',
-                'transition-all duration-150',
-                'hover:text-normal'
+                'flex-1 text-xs leading-snug font-medium',
+                'text-normal',
+                'transition-colors duration-150',
+                isSelected && 'text-high',
+                'group-hover/card:text-high'
               )}
-            />
+            >
+              {task.title}
+            </span>
+            <div className="flex items-center gap-1 shrink-0 mt-px">
+              {/* CI status indicator (only for open PRs) */}
+              {(() => {
+                const ciIndicator = getCiStatusIndicator(
+                  task.ci_status,
+                  task.pr_status
+                );
+                if (!ciIndicator) return null;
+                const CiIcon = ciIndicator.icon;
+                return (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span className="cursor-default">
+                        <CiIcon
+                          weight="fill"
+                          className={cn(
+                            'size-3',
+                            ciIndicator.color,
+                            ciIndicator.animate && 'animate-spin'
+                          )}
+                        />
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent side="top" className="text-xs">
+                      <span>{ciIndicator.title}</span>
+                    </TooltipContent>
+                  </Tooltip>
+                );
+              })()}
+              {/* PR status indicator */}
+              {(() => {
+                const prIndicator = getPrStatusIndicator(task.pr_status);
+                if (!prIndicator) return null;
+                const PrIcon = prIndicator.icon;
+                return (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span className="cursor-default">
+                        <PrIcon
+                          weight="fill"
+                          className={cn('size-3', prIndicator.color)}
+                        />
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent side="top" className="text-xs">
+                      <span>{prIndicator.title}</span>
+                    </TooltipContent>
+                  </Tooltip>
+                );
+              })()}
+              {task.has_in_progress_attempt && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className="cursor-default">
+                      <SpinnerIcon className="size-3 animate-spin text-info" />
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="text-xs">
+                    <span>Task in progress</span>
+                  </TooltipContent>
+                </Tooltip>
+              )}
+              {task.last_attempt_failed && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className="cursor-default">
+                      <XCircleIcon
+                        weight="fill"
+                        className="size-3 text-error"
+                      />
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="text-xs">
+                    <span>Last attempt failed</span>
+                  </TooltipContent>
+                </Tooltip>
+              )}
+              <DotsThreeIcon
+                weight="bold"
+                className={cn(
+                  'size-3.5 text-low/60',
+                  'opacity-0 group-hover/card:opacity-100',
+                  'transition-all duration-150',
+                  'hover:text-normal'
+                )}
+              />
+            </div>
           </div>
+          {task.description && (
+            <p
+              className={cn(
+                'text-[10px] leading-relaxed',
+                'text-low/50 line-clamp-2',
+                'group-hover/card:text-low/70',
+                'transition-colors duration-150'
+              )}
+            >
+              {task.description}
+            </p>
+          )}
+          <TaskMetadata
+            taskId={taskId}
+            priority={task.priority}
+            dueDate={task.due_date}
+            labels={task.labels}
+            compact
+            className="mt-1"
+          />
         </div>
-        {task.description && (
-          <p
-            className={cn(
-              'text-[10px] leading-relaxed',
-              'text-low/50 line-clamp-2',
-              'group-hover/card:text-low/70',
-              'transition-colors duration-150'
-            )}
-          >
-            {task.description}
-          </p>
-        )}
-        <TaskMetadata
-          taskId={taskId}
-          priority={task.priority}
-          dueDate={task.due_date}
-          labels={task.labels}
-          compact
-          className="mt-1"
-        />
-      </div>
+      </TooltipProvider>
     </button>
   );
 }
