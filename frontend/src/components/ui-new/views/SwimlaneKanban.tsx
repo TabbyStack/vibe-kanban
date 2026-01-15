@@ -445,9 +445,7 @@ function SwimlaneKanbanContent({
           'sticky top-[44px] z-10',
           'flex',
           'min-w-[880px]',
-          'bg-primary/98 backdrop-blur-sm',
-          'border-b border-panel/30',
-          'shadow-sm shadow-black/[0.02]'
+          'bg-primary/98 backdrop-blur-sm'
         )}
       >
         {/* Empty first cell - sticky on horizontal scroll to align with project names */}

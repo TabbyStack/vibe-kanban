@@ -324,7 +324,8 @@ export function SwimlaneTaskCard({
                 'text-[10px] leading-relaxed',
                 'text-low/50',
                 'group-hover/card:text-low/70',
-                'transition-colors duration-150'
+                'transition-colors duration-150',
+                'line-clamp-2'
               )}
             >
               {task.description}
