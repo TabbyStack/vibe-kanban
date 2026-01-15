@@ -250,7 +250,9 @@ export function NextActionCard({
                     <FileDiff className="h-3.5 w-3.5" />
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent>{t('attempt.diffs')}</TooltipContent>
+                <TooltipContent className="bg-secondary text-high border border-panel">
+                  {t('attempt.diffs')}
+                </TooltipContent>
               </Tooltip>
 
               {containerRef && (
@@ -270,7 +272,7 @@ export function NextActionCard({
                       )}
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent>
+                  <TooltipContent className="bg-secondary text-high border border-panel">
                     {copied ? t('attempt.copied') : t('attempt.clickToCopy')}
                   </TooltipContent>
                 </Tooltip>
@@ -294,7 +296,7 @@ export function NextActionCard({
                     />
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent>
+                <TooltipContent className="bg-secondary text-high border border-panel">
                   {t('attempt.openInEditor', { editor: editorName })}
                 </TooltipContent>
               </Tooltip>
@@ -328,7 +330,7 @@ export function NextActionCard({
                     </Button>
                   </span>
                 </TooltipTrigger>
-                <TooltipContent>
+                <TooltipContent className="bg-secondary text-high border border-panel">
                   {!projectHasDevScript
                     ? t('attempt.devScriptMissingTooltip')
                     : hasRunningDevServer
@@ -351,7 +353,9 @@ export function NextActionCard({
                       <Terminal className="h-3.5 w-3.5" />
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent>{t('attempt.viewDevLogs')}</TooltipContent>
+                  <TooltipContent className="bg-secondary text-high border border-panel">
+                    {t('attempt.viewDevLogs')}
+                  </TooltipContent>
                 </Tooltip>
               )}
 
@@ -368,7 +372,9 @@ export function NextActionCard({
                     <GitBranch className="h-3.5 w-3.5" />
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent>{t('attempt.gitActions')}</TooltipContent>
+                <TooltipContent className="bg-secondary text-high border border-panel">
+                  {t('attempt.gitActions')}
+                </TooltipContent>
               </Tooltip>
             </div>
           )}

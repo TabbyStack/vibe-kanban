@@ -27,6 +27,7 @@ import { DiffsPanel } from '@/components/panels/DiffsPanel';
 import TaskAttemptPanel from '@/components/panels/TaskAttemptPanel';
 import TaskPanel from '@/components/panels/TaskPanel';
 import TodoPanel from '@/components/tasks/TodoPanel';
+import { StickyNextActionCard } from '@/components/tasks/StickyNextActionCard';
 import { NewCard, NewCardHeader } from '@/components/ui/new-card';
 import {
   Breadcrumb,
@@ -318,6 +319,14 @@ function TaskDetailsPanelContent({
               <div className="flex-1 min-h-0 flex flex-col">
                 <div className="flex-1 min-h-0 flex flex-col">{logs}</div>
 
+                {/* Summary & Actions - sticky above TodoPanel */}
+                <div className="shrink-0 border-t">
+                  <div className="mx-auto w-full max-w-[50rem]">
+                    <StickyNextActionCard attempt={attempt} task={selectedTask} />
+                  </div>
+                </div>
+
+                {/* Todos section */}
                 <div className="shrink-0 border-t">
                   <div className="mx-auto w-full max-w-[50rem]">
                     <TodoPanel />
@@ -385,6 +394,7 @@ function TaskDetailsPanelContent({
       <ClickedElementsProvider attempt={attempt}>
         <ReviewProvider attemptId={attempt?.id}>
           <ExecutionProcessesProvider
+            key={`${attempt?.id}-${attempt?.session?.id}`}
             attemptId={attempt?.id}
             sessionId={attempt?.session?.id}
           >
