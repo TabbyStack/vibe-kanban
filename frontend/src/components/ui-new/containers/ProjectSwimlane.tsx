@@ -236,7 +236,7 @@ export function ProjectSwimlane({
         <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
           <div className="border-b border-panel/15">
             {/* Project header with collapse toggle - sticky on both horizontal and vertical scroll */}
-            <div className="flex items-center sticky left-0 top-[80px] z-[15] bg-primary">
+            <div className="flex items-center sticky left-0 top-[114px] z-[12] bg-primary">
               {/* Collapse toggle button */}
               <Tooltip>
                 <TooltipTrigger asChild>

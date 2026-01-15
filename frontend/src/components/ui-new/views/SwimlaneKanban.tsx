@@ -500,7 +500,7 @@ function SwimlaneKanbanContent({
                     'border-b border-panel/15',
                     'hover:bg-secondary/30',
                     'transition-colors duration-150',
-                    'sticky top-[80px] z-[12]'
+                    'sticky top-[80px] z-[15]'
                   )}
                 >
                   <button
