@@ -405,7 +405,9 @@ function SwimlaneKanbanContent({
             title="Show only tasks with active sessions"
           >
             <LightningIcon
-              weight={filterState.workspaceFilter === 'active' ? 'fill' : 'regular'}
+              weight={
+                filterState.workspaceFilter === 'active' ? 'fill' : 'regular'
+              }
               className="size-3.5"
             />
             <span>Active</span>
@@ -429,7 +431,9 @@ function SwimlaneKanbanContent({
               onFilterChange({
                 ...filterState,
                 workspaceFilter:
-                  filterState.workspaceFilter === 'in-review' ? 'all' : 'in-review',
+                  filterState.workspaceFilter === 'in-review'
+                    ? 'all'
+                    : 'in-review',
               })
             }
             className={cn(
@@ -443,7 +447,9 @@ function SwimlaneKanbanContent({
             title="Show only tasks awaiting review"
           >
             <EyeIcon
-              weight={filterState.workspaceFilter === 'in-review' ? 'fill' : 'regular'}
+              weight={
+                filterState.workspaceFilter === 'in-review' ? 'fill' : 'regular'
+              }
               className="size-3.5"
             />
             <span>Review</span>
@@ -482,8 +488,8 @@ function SwimlaneKanbanContent({
                 )}
               >
                 <span className="truncate max-w-[100px]">
-                  {projects.find((p) => p.id === filterState.selectedProjectId)?.name ??
-                    'Project'}
+                  {projects.find((p) => p.id === filterState.selectedProjectId)
+                    ?.name ?? 'Project'}
                 </span>
                 <XIcon className="size-3 shrink-0" />
               </button>
@@ -510,7 +516,9 @@ function SwimlaneKanbanContent({
               filterState.statuses.length < 5 && (
                 <button
                   type="button"
-                  onClick={() => onFilterChange({ ...filterState, statuses: [] })}
+                  onClick={() =>
+                    onFilterChange({ ...filterState, statuses: [] })
+                  }
                   className={cn(
                     'flex items-center gap-1 px-2 py-0.5 rounded-full',
                     'text-[11px] font-medium',

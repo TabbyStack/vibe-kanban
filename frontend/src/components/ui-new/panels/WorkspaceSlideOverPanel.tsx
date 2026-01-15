@@ -27,8 +27,11 @@ export function WorkspaceSlideOverPanel({
   // Fetch workspace data
   const { data: workspace, isLoading: isWorkspaceLoading } =
     useAttempt(workspaceId);
-  const { sessions, isLoading: isSessionsLoading, selectedSession } =
-    useWorkspaceSessions(workspaceId);
+  const {
+    sessions,
+    isLoading: isSessionsLoading,
+    selectedSession,
+  } = useWorkspaceSessions(workspaceId);
   const { repos } = useAttemptRepo(workspaceId);
 
   // Get diff stats

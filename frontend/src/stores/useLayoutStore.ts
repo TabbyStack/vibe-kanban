@@ -232,7 +232,8 @@ export const useLayoutStore = create<LayoutState>()(
       toggleSlideOverExpanded: () =>
         set((s) => ({ isSlideOverExpanded: !s.isSlideOverExpanded })),
 
-      setSlideOverExpanded: (expanded) => set({ isSlideOverExpanded: expanded }),
+      setSlideOverExpanded: (expanded) =>
+        set({ isSlideOverExpanded: expanded }),
     }),
     {
       name: 'layout-preferences',
