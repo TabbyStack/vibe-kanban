@@ -2,8 +2,6 @@ import { useTranslation } from 'react-i18next';
 import { useProject } from '@/contexts/ProjectContext';
 import { useTaskAttemptsWithSessions } from '@/hooks/useTaskAttempts';
 import { useTaskAttemptWithSession } from '@/hooks/useTaskAttempt';
-import { useNavigateWithSearch } from '@/hooks';
-import { paths } from '@/lib/paths';
 import type { TaskWithAttemptStatus } from 'shared/types';
 import type { WorkspaceWithSession } from '@/types/attempt';
 import { NewCardContent } from '../ui/new-card';
@@ -17,15 +15,17 @@ interface TaskPanelProps {
   task: TaskWithAttemptStatus | null;
   projectId?: string;
   onAttemptCreated?: (attemptId: string) => void;
+  /** Callback when an attempt is clicked - receives attemptId */
+  onAttemptClick?: (attemptId: string) => void;
 }
 
 const TaskPanel = ({
   task,
   projectId: propProjectId,
   onAttemptCreated,
+  onAttemptClick,
 }: TaskPanelProps) => {
   const { t } = useTranslation('tasks');
-  const navigate = useNavigateWithSearch();
   const { projectId: contextProjectId } = useProject();
   const projectId = propProjectId ?? contextProjectId;
 
@@ -122,11 +122,7 @@ const TaskPanel = ({
                 columns={attemptColumns}
                 keyExtractor={(attempt) => attempt.id}
                 onRowClick={(attempt) => {
-                  if (projectId) {
-                    navigate(
-                      paths.attempt(projectId, attempt.task_id, attempt.id)
-                    );
-                  }
+                  onAttemptClick?.(attempt.id);
                 }}
                 isLoading={isParentLoading}
                 headerContent="Parent Attempt"
@@ -147,9 +143,7 @@ const TaskPanel = ({
                 columns={attemptColumns}
                 keyExtractor={(attempt) => attempt.id}
                 onRowClick={(attempt) => {
-                  if (projectId && task.id) {
-                    navigate(paths.attempt(projectId, task.id, attempt.id));
-                  }
+                  onAttemptClick?.(attempt.id);
                 }}
                 emptyState={t('taskPanel.noAttempts')}
                 headerContent={

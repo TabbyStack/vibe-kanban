@@ -135,9 +135,13 @@ export function AllBoardsLayout() {
 
   const handleOpenBoard = useCallback(
     (projectId: string) => {
-      navigate(`/projects/${projectId}/tasks`);
+      // Filter to show only this project instead of navigating to legacy route
+      setFilterState((prev) => ({
+        ...prev,
+        selectedProjectId: projectId,
+      }));
     },
-    [navigate]
+    []
   );
 
   // Sidebar action handlers

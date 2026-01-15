@@ -301,6 +301,7 @@ function TaskDetailsPanelContent({
           task={selectedTask}
           projectId={projectId}
           onAttemptCreated={handleAttemptCreated}
+          onAttemptClick={setSelectedAttemptId}
         />
       ) : (
         <TaskAttemptPanel attempt={attempt} task={selectedTask}>

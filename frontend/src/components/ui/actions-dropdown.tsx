@@ -24,8 +24,6 @@ import { StopShareTaskDialog } from '@/components/dialogs/tasks/StopShareTaskDia
 import { useProject } from '@/contexts/ProjectContext';
 import { openTaskForm } from '@/lib/openTaskForm';
 import { tasksApi } from '@/lib/api';
-
-import { useNavigate } from 'react-router-dom';
 import type { SharedTaskRecord } from '@/hooks/useProjectTasks';
 import { useAuth } from '@/hooks';
 import { WorkspaceWithSession } from '@/types/attempt';
@@ -50,7 +48,6 @@ export function ActionsDropdown({
   const { projectId: contextProjectId } = useProject();
   const projectId = propProjectId ?? contextProjectId;
   const openInEditor = useOpenInEditor(attempt?.id);
-  const navigate = useNavigate();
   const { userId, isSignedIn } = useAuth();
   const queryClient = useQueryClient();
   const [isCategorizing, setIsCategorizing] = useState(false);
@@ -104,11 +101,7 @@ export function ActionsDropdown({
       attemptId: attempt.id,
       projectId,
       attempt,
-      onNavigateToTask: (taskId: string) => {
-        if (projectId) {
-          navigate(`/projects/${projectId}/tasks/${taskId}/attempts/latest`);
-        }
-      },
+      // Related tasks are shown in the dialog - users can find them in the board
     });
   };
 

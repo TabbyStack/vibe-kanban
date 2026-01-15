@@ -1,7 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useNavigateWithSearch } from '@/hooks';
 import { tasksApi } from '@/lib/api';
-import { paths } from '@/lib/paths';
 import { taskRelationshipsKeys } from '@/hooks/useTaskRelationships';
 import { workspaceSummaryKeys } from '@/components/ui-new/hooks/useWorkspaces';
 import type {
@@ -14,9 +12,8 @@ import type {
 } from 'shared/types';
 import { taskKeys } from './useTask';
 
-export function useTaskMutations(projectId?: string) {
+export function useTaskMutations(_projectId?: string) {
   const queryClient = useQueryClient();
-  const navigate = useNavigateWithSearch();
 
   const invalidateQueries = (taskId?: string) => {
     queryClient.invalidateQueries({ queryKey: taskKeys.all });
@@ -37,9 +34,8 @@ export function useTaskMutations(projectId?: string) {
           ),
         });
       }
-      if (projectId) {
-        navigate(`${paths.task(projectId, createdTask.id)}/attempts/latest`);
-      }
+      // Task will appear in the board via query invalidation
+      // Users can click on it to view details in the TaskDetailsPanel
     },
     onError: (err) => {
       console.error('Failed to create task:', err);
@@ -59,9 +55,8 @@ export function useTaskMutations(projectId?: string) {
           ),
         });
       }
-      if (projectId) {
-        navigate(`${paths.task(projectId, createdTask.id)}/attempts/latest`);
-      }
+      // Task will appear in the board via query invalidation
+      // Users can click on it to view details in the TaskDetailsPanel
     },
     onError: (err) => {
       console.error('Failed to create and start task:', err);

@@ -2,8 +2,6 @@ import { useEffect } from 'react';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { I18nextProvider } from 'react-i18next';
 import i18n from '@/i18n';
-import { Projects } from '@/pages/Projects';
-import { ProjectTasks } from '@/pages/ProjectTasks';
 import { FullAttemptLogsPage } from '@/pages/FullAttemptLogs';
 import { NormalLayout } from '@/components/layout/NormalLayout';
 import { NewDesignLayout } from '@/components/layout/NewDesignLayout';
@@ -158,7 +156,25 @@ function AppContent() {
               }
             />
 
-            {/* Legacy design routes for project tasks and settings */}
+            {/* Redirect legacy project routes to home */}
+            <Route
+              path="/projects/:projectId"
+              element={<Navigate to="/" replace />}
+            />
+            <Route
+              path="/projects/:projectId/tasks"
+              element={<Navigate to="/" replace />}
+            />
+            <Route
+              path="/projects/:projectId/tasks/:taskId"
+              element={<Navigate to="/" replace />}
+            />
+            <Route
+              path="/projects/:projectId/tasks/:taskId/attempts/:attemptId"
+              element={<Navigate to="/" replace />}
+            />
+
+            {/* Settings routes */}
             <Route
               element={
                 <LegacyDesignScope>
@@ -166,11 +182,6 @@ function AppContent() {
                 </LegacyDesignScope>
               }
             >
-              <Route path="/projects/:projectId" element={<Projects />} />
-              <Route
-                path="/projects/:projectId/tasks"
-                element={<ProjectTasks />}
-              />
               <Route path="/settings/*" element={<SettingsLayout />}>
                 <Route index element={<Navigate to="general" replace />} />
                 <Route path="general" element={<GeneralSettings />} />
@@ -186,14 +197,6 @@ function AppContent() {
               <Route
                 path="/mcp-servers"
                 element={<Navigate to="/settings/mcp" replace />}
-              />
-              <Route
-                path="/projects/:projectId/tasks/:taskId"
-                element={<ProjectTasks />}
-              />
-              <Route
-                path="/projects/:projectId/tasks/:taskId/attempts/:attemptId"
-                element={<ProjectTasks />}
               />
             </Route>
 

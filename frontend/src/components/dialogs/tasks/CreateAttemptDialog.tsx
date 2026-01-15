@@ -13,7 +13,6 @@ import RepoBranchSelector from '@/components/tasks/RepoBranchSelector';
 import { ExecutorProfileSelector } from '@/components/settings';
 import { useAttemptCreation } from '@/hooks/useAttemptCreation';
 import {
-  useNavigateWithSearch,
   useTask,
   useAttempt,
   useRepoBranchSelection,
@@ -22,7 +21,6 @@ import {
 import { useTaskAttemptsWithSessions } from '@/hooks/useTaskAttempts';
 import { useProject } from '@/contexts/ProjectContext';
 import { useUserSystem } from '@/components/ConfigProvider';
-import { paths } from '@/lib/paths';
 import NiceModal, { useModal } from '@ebay/nice-modal-react';
 import { defineModal } from '@/lib/modals';
 import type { ExecutorProfileId, BaseCodingAgent } from 'shared/types';
@@ -37,7 +35,6 @@ export interface CreateAttemptDialogProps {
 const CreateAttemptDialogImpl = NiceModal.create<CreateAttemptDialogProps>(
   ({ taskId, projectId: propProjectId, onSuccess: propOnSuccess }) => {
     const modal = useModal();
-    const navigate = useNavigateWithSearch();
     const { projectId: contextProjectId } = useProject();
     const projectId = propProjectId ?? contextProjectId;
     const { t } = useTranslation('tasks');
@@ -45,11 +42,9 @@ const CreateAttemptDialogImpl = NiceModal.create<CreateAttemptDialogProps>(
     const { createAttempt, isCreating, error } = useAttemptCreation({
       taskId,
       onSuccess: (attempt) => {
-        if (propOnSuccess) {
-          propOnSuccess(attempt.id);
-        } else if (projectId) {
-          navigate(paths.attempt(projectId, taskId, attempt.id));
-        }
+        // Call the provided callback if available
+        // The attempt will appear in the UI via query invalidation
+        propOnSuccess?.(attempt.id);
       },
     });
 
