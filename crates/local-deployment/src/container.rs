@@ -58,6 +58,7 @@ use tokio_util::io::ReaderStream;
 use utils::{
     log_msg::LogMsg,
     msg_store::MsgStore,
+    port_allocator::AllocatedPorts,
     text::{git_branch_id, short_uuid, truncate_to_char_boundary},
 };
 use uuid::Uuid;
@@ -70,6 +71,7 @@ pub struct LocalContainerService {
     child_store: Arc<RwLock<HashMap<Uuid, Arc<RwLock<AsyncGroupChild>>>>>,
     interrupt_senders: Arc<RwLock<HashMap<Uuid, InterruptSender>>>,
     msg_stores: Arc<RwLock<HashMap<Uuid, Arc<MsgStore>>>>,
+    port_allocations: Arc<RwLock<HashMap<Uuid, AllocatedPorts>>>,
     config: Arc<RwLock<Config>>,
     git: GitService,
     image_service: ImageService,
@@ -95,6 +97,7 @@ impl LocalContainerService {
     ) -> Self {
         let child_store = Arc::new(RwLock::new(HashMap::new()));
         let interrupt_senders = Arc::new(RwLock::new(HashMap::new()));
+        let port_allocations = Arc::new(RwLock::new(HashMap::new()));
         let notification_service = NotificationService::new(config.clone());
 
         let container = LocalContainerService {
@@ -102,6 +105,7 @@ impl LocalContainerService {
             child_store,
             interrupt_senders,
             msg_stores,
+            port_allocations,
             config,
             git,
             image_service,
@@ -140,6 +144,41 @@ impl LocalContainerService {
     async fn take_interrupt_sender(&self, id: &Uuid) -> Option<InterruptSender> {
         let mut map = self.interrupt_senders.write().await;
         map.remove(id)
+    }
+
+    /// Allocate unique ports for a dev server execution process
+    async fn allocate_ports_for_execution(
+        &self,
+        exec_id: Uuid,
+    ) -> Result<AllocatedPorts, ContainerError> {
+        let ports = utils::port_allocator::allocate_dev_server_ports().map_err(|e| {
+            ContainerError::Other(anyhow!("Failed to allocate dev server ports: {}", e))
+        })?;
+
+        let mut map = self.port_allocations.write().await;
+        map.insert(exec_id, ports);
+
+        tracing::info!(
+            "Allocated dev server ports for {}: frontend={}, backend={}",
+            exec_id,
+            ports.frontend,
+            ports.backend
+        );
+
+        Ok(ports)
+    }
+
+    /// Release allocated ports for an execution process
+    async fn release_ports(&self, exec_id: &Uuid) {
+        let mut map = self.port_allocations.write().await;
+        if let Some(ports) = map.remove(exec_id) {
+            tracing::debug!(
+                "Released dev server ports for {}: frontend={}, backend={}",
+                exec_id,
+                ports.frontend,
+                ports.backend
+            );
+        }
     }
 
     pub async fn cleanup_workspace(db: &DBService, workspace: &Workspace) {
@@ -559,6 +598,9 @@ impl LocalContainerService {
 
             // Cleanup child handle
             child_store.write().await.remove(&exec_id);
+
+            // Release allocated ports
+            container.release_ports(&exec_id).await;
         })
     }
 
@@ -1098,6 +1140,16 @@ impl ContainerService for LocalContainerService {
         env.insert("VK_WORKSPACE_ID", workspace.id.to_string());
         env.insert("VK_WORKSPACE_BRANCH", &workspace.branch);
 
+        // Allocate and inject unique ports for dev server processes
+        if execution_process.run_reason == ExecutionProcessRunReason::DevServer {
+            let ports = self
+                .allocate_ports_for_execution(execution_process.id)
+                .await?;
+            env.insert("FRONTEND_PORT", ports.frontend.to_string());
+            env.insert("BACKEND_PORT", ports.backend.to_string());
+            env.insert("PORT", ports.frontend.to_string());
+        }
+
         // Create the child and stream, add to execution tracker with timeout
         let mut spawned = tokio::time::timeout(
             Duration::from_secs(30),
@@ -1191,6 +1243,7 @@ impl ContainerService for LocalContainerService {
             }
         }
         self.remove_child_from_store(&execution_process.id).await;
+        self.release_ports(&execution_process.id).await;
 
         // Mark the process finished in the MsgStore
         if let Some(msg) = self.msg_stores.write().await.remove(&execution_process.id) {
