@@ -11,8 +11,8 @@ use db::models::merge::{CiStatus, PullRequestInfo};
 use detection::detect_provider_from_url;
 use enum_dispatch::enum_dispatch;
 pub use types::{
-    CreatePrRequest, GitHostError, PrComment, PrCommentAuthor, PrReviewComment, ProviderKind,
-    ReviewCommentUser, UnifiedPrComment,
+    CiFailureInfo, CreatePrRequest, GitHostError, PrComment, PrCommentAuthor, PrReviewComment,
+    ProviderKind, ReviewCommentUser, UnifiedPrComment,
 };
 
 use self::{azure::AzureDevOpsProvider, github::GitHubProvider};
@@ -31,6 +31,9 @@ pub trait GitHostProvider: Send + Sync {
 
     /// Get the CI/GitHub Actions check status for a PR
     async fn get_ci_status(&self, pr_url: &str) -> Result<CiStatus, GitHostError>;
+
+    /// Get detailed information about CI failures for a PR
+    async fn get_ci_failures(&self, pr_url: &str) -> Result<Vec<CiFailureInfo>, GitHostError>;
 
     async fn list_prs_for_branch(
         &self,

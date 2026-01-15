@@ -14,7 +14,7 @@ use tracing::info;
 
 use super::{
     GitHostProvider,
-    types::{CreatePrRequest, GitHostError, ProviderKind, UnifiedPrComment},
+    types::{CiFailureInfo, CreatePrRequest, GitHostError, ProviderKind, UnifiedPrComment},
 };
 
 #[derive(Debug, Clone)]
@@ -278,6 +278,50 @@ impl GitHostProvider for GitHubProvider {
                     ))
                 })?;
             ci_status.map_err(GitHostError::from)
+        })
+        .retry(
+            &ExponentialBuilder::default()
+                .with_min_delay(Duration::from_secs(1))
+                .with_max_delay(Duration::from_secs(30))
+                .with_max_times(3)
+                .with_jitter(),
+        )
+        .when(|err: &GitHostError| err.should_retry())
+        .notify(|err: &GitHostError, dur: Duration| {
+            tracing::warn!(
+                "GitHub API call failed, retrying after {:.2}s: {}",
+                dur.as_secs_f64(),
+                err
+            );
+        })
+        .await
+    }
+
+    async fn get_ci_failures(&self, pr_url: &str) -> Result<Vec<CiFailureInfo>, GitHostError> {
+        let cli = self.gh_cli.clone();
+        let url = pr_url.to_string();
+
+        (|| async {
+            let cli = cli.clone();
+            let url = url.clone();
+            let failures = task::spawn_blocking(move || cli.get_pr_ci_failures(&url))
+                .await
+                .map_err(|err| {
+                    GitHostError::PullRequest(format!(
+                        "Failed to execute GitHub CLI for getting CI failures: {err}"
+                    ))
+                })?;
+            failures
+                .map(|f| {
+                    f.into_iter()
+                        .map(|details| CiFailureInfo {
+                            name: details.name,
+                            conclusion: details.conclusion,
+                            details_url: details.details_url,
+                        })
+                        .collect()
+                })
+                .map_err(GitHostError::from)
         })
         .retry(
             &ExponentialBuilder::default()

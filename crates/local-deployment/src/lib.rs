@@ -16,6 +16,7 @@ use services::services::{
     git::GitService,
     image::ImageService,
     oauth_credentials::OAuthCredentials,
+    pr_monitor::PrMonitorService,
     project::ProjectService,
     queued_message::QueuedMessageService,
     remote_client::{RemoteClient, RemoteClientError},
@@ -276,6 +277,22 @@ impl Deployment for LocalDeployment {
 
     fn auth_context(&self) -> &AuthContext {
         &self.auth_context
+    }
+
+    async fn spawn_pr_monitor_service(&self) -> tokio::task::JoinHandle<()> {
+        let db = self.db().clone();
+        let analytics = self
+            .analytics()
+            .as_ref()
+            .map(|analytics_service| AnalyticsContext {
+                user_id: self.user_id().to_string(),
+                analytics_service: analytics_service.clone(),
+            });
+        let publisher = self.share_publisher().ok();
+        let git = self.git().clone();
+        let container = self.container.clone();
+        let config = self.config().clone();
+        PrMonitorService::spawn(db, analytics, publisher, git, container, config).await
     }
 }
 
