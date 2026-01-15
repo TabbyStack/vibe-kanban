@@ -43,6 +43,14 @@ pub struct Config {
     pub pr_auto_description_prompt: Option<String>,
     #[serde(default)]
     pub pr_conflict_resolution_prompt: Option<String>,
+    #[serde(default = "default_ci_failure_auto_fix_enabled")]
+    pub ci_failure_auto_fix_enabled: bool,
+    #[serde(default)]
+    pub ci_failure_resolution_prompt: Option<String>,
+}
+
+fn default_ci_failure_auto_fix_enabled() -> bool {
+    true
 }
 
 impl Config {
@@ -69,6 +77,8 @@ impl Config {
             pr_auto_description_enabled: true,
             pr_auto_description_prompt: None,
             pr_conflict_resolution_prompt: None,
+            ci_failure_auto_fix_enabled: true,
+            ci_failure_resolution_prompt: None,
         }
     }
 
@@ -120,6 +130,8 @@ impl Default for Config {
             pr_auto_description_enabled: true,
             pr_auto_description_prompt: None,
             pr_conflict_resolution_prompt: None,
+            ci_failure_auto_fix_enabled: true,
+            ci_failure_resolution_prompt: None,
         }
     }
 }
