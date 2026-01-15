@@ -1,9 +1,5 @@
 import { useMemo } from 'react';
-import {
-  WarningIcon,
-  ClockIcon,
-  XCircleIcon,
-} from '@phosphor-icons/react';
+import { WarningIcon, ClockIcon, XCircleIcon } from '@phosphor-icons/react';
 import { cn } from '@/lib/utils';
 import { Tooltip } from './Tooltip';
 import type { TaskWithAttemptStatus } from 'shared/types';
@@ -28,7 +24,8 @@ const STALE_THRESHOLD_DAYS = 7;
 function isTaskStale(task: TaskWithAttemptStatus): boolean {
   const updatedAt = new Date(task.updated_at);
   const now = new Date();
-  const diffDays = (now.getTime() - updatedAt.getTime()) / (1000 * 60 * 60 * 24);
+  const diffDays =
+    (now.getTime() - updatedAt.getTime()) / (1000 * 60 * 60 * 24);
   return task.status === 'inprogress' && diffDays > STALE_THRESHOLD_DAYS;
 }
 
@@ -39,7 +36,9 @@ export function calculateProjectHealth(
 
   const failedCount = allTasks.filter((t) => t.last_attempt_failed).length;
   const staleCount = allTasks.filter(isTaskStale).length;
-  const ciFailingCount = allTasks.filter((t) => t.ci_status === 'failing').length;
+  const ciFailingCount = allTasks.filter(
+    (t) => t.ci_status === 'failing'
+  ).length;
 
   const issues: string[] = [];
 
@@ -50,7 +49,9 @@ export function calculateProjectHealth(
     issues.push(`${staleCount} stale task${staleCount > 1 ? 's' : ''}`);
   }
   if (ciFailingCount > 0) {
-    issues.push(`${ciFailingCount} failing CI${ciFailingCount > 1 ? ' checks' : ''}`);
+    issues.push(
+      `${ciFailingCount} failing CI${ciFailingCount > 1 ? ' checks' : ''}`
+    );
   }
 
   let status: HealthStatus = 'healthy';
@@ -84,12 +85,15 @@ export function ProjectHealthIndicator({
     return null;
   }
 
-  const Icon = health.status === 'critical' ? XCircleIcon :
-               health.staleCount > 0 ? ClockIcon : WarningIcon;
+  const Icon =
+    health.status === 'critical'
+      ? XCircleIcon
+      : health.staleCount > 0
+        ? ClockIcon
+        : WarningIcon;
 
-  const colorClass = health.status === 'critical'
-    ? 'text-error'
-    : 'text-warning';
+  const colorClass =
+    health.status === 'critical' ? 'text-error' : 'text-warning';
 
   return (
     <Tooltip content={health.message} side="right">
