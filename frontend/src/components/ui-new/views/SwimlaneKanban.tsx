@@ -442,10 +442,10 @@ function SwimlaneKanbanContent({
       {/* Single sticky status header */}
       <div
         className={cn(
-          'sticky top-[44px] z-10',
+          'sticky top-[44px] z-[20]',
           'flex',
           'min-w-[880px]',
-          'bg-primary/98 backdrop-blur-sm'
+          'bg-primary'
         )}
       >
         {/* Empty first cell - sticky on horizontal scroll to align with project names */}
@@ -496,10 +496,11 @@ function SwimlaneKanbanContent({
                   className={cn(
                     'group/header flex items-center justify-between',
                     'px-3 py-2',
-                    'bg-secondary/20',
+                    'bg-primary',
                     'border-b border-panel/15',
                     'hover:bg-secondary/30',
-                    'transition-colors duration-150'
+                    'transition-colors duration-150',
+                    'sticky top-[80px] z-[12]'
                   )}
                 >
                   <button
