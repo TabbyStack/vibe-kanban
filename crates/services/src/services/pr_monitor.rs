@@ -83,6 +83,25 @@ Important guidelines:
 - Test that the code compiles after resolving conflicts
 - Do NOT use `git rebase --abort` unless absolutely necessary"#;
 
+/// Default prompt for AI-assisted CI failure resolution
+pub const DEFAULT_CI_FAILURE_RESOLUTION_PROMPT: &str = r#"The CI/CD pipeline has failed for this pull request. Your task is to investigate and fix the failing tests or build issues.
+
+Failed checks: {failed_checks}
+
+Your task:
+1. First, run the failing tests or build commands locally to reproduce the issue
+2. Analyze the error messages and identify the root cause
+3. Make the necessary code changes to fix the issue
+4. Run the tests/build again to verify the fix works
+5. Commit and push your changes
+
+Important guidelines:
+- Focus only on fixing the CI failures - don't make unrelated changes
+- If a test is legitimately wrong (testing outdated behavior), update the test
+- If the code has a bug, fix the code
+- Make sure all existing tests still pass after your changes
+- If the issue is a flaky test, add appropriate retries or fix the underlying race condition"#;
+
 /// Service to monitor PRs and update task status when they are merged
 /// Also detects and addresses merge conflicts for tasks in review
 pub struct PrMonitorService<C: ContainerService + Send + Sync + 'static> {
@@ -251,6 +270,16 @@ impl<C: ContainerService + Send + Sync + 'static> PrMonitorService<C> {
                     "Error checking/resolving conflicts for PR #{}: {}",
                     pr_merge.pr_info.number, e
                 );
+            }
+
+            // Check for CI failures and attempt to fix them
+            if matches!(ci_status, CiStatus::Failing) {
+                if let Err(e) = self.check_and_resolve_ci_failures(pr_merge).await {
+                    warn!(
+                        "Error checking/resolving CI failures for PR #{}: {}",
+                        pr_merge.pr_info.number, e
+                    );
+                }
             }
         }
 
@@ -595,6 +624,191 @@ impl<C: ContainerService + Send + Sync + 'static> PrMonitorService<C> {
 
         info!(
             "Triggered AI conflict resolution for workspace {} (session {})",
+            workspace.id, session.id
+        );
+
+        Ok(())
+    }
+
+    /// Check if a PR has CI failures and attempt to fix them
+    async fn check_and_resolve_ci_failures(&self, pr_merge: &PrMerge) -> Result<(), PrMonitorError> {
+        // Check if CI failure auto-fix is enabled
+        let config = self.config.read().await;
+        if !config.ci_failure_auto_fix_enabled {
+            debug!("CI failure auto-fix is disabled, skipping");
+            return Ok(());
+        }
+        drop(config);
+
+        // Get the workspace for this PR
+        let Some(workspace) = Workspace::find_by_id(&self.db.pool, pr_merge.workspace_id).await?
+        else {
+            debug!(
+                "Workspace {} not found for PR #{}",
+                pr_merge.workspace_id, pr_merge.pr_info.number
+            );
+            return Ok(());
+        };
+
+        // Skip archived workspaces
+        if workspace.archived {
+            debug!(
+                "Skipping CI failure check for archived workspace {}",
+                workspace.id
+            );
+            return Ok(());
+        }
+
+        // Get the task to check if it's in review
+        let Some(task) = Task::find_by_id(&self.db.pool, workspace.task_id).await? else {
+            debug!("Task {} not found for workspace {}", workspace.task_id, workspace.id);
+            return Ok(());
+        };
+
+        // Only attempt CI fix if task is in review status
+        if task.status != TaskStatus::InReview {
+            debug!(
+                "Skipping CI failure check for task {} (status: {:?})",
+                task.id, task.status
+            );
+            return Ok(());
+        }
+
+        // Check if there's already a running execution process for this workspace
+        if self.container.has_running_processes(task.id).await.map_err(|e| {
+            PrMonitorError::Container(e.to_string())
+        })? {
+            debug!(
+                "Skipping CI failure check for workspace {} - execution already in progress",
+                workspace.id
+            );
+            return Ok(());
+        }
+
+        // Get CI failure details
+        let git_host = git_host::GitHostService::from_url(&pr_merge.pr_info.url)?;
+        let failures = git_host.get_ci_failures(&pr_merge.pr_info.url).await?;
+
+        if failures.is_empty() {
+            debug!(
+                "No CI failures found for PR #{} (status might have changed)",
+                pr_merge.pr_info.number
+            );
+            return Ok(());
+        }
+
+        info!(
+            "Found {} CI failures for PR #{}, triggering AI fix",
+            failures.len(), pr_merge.pr_info.number
+        );
+
+        // Format the failed checks for the prompt
+        let failed_checks: Vec<String> = failures
+            .iter()
+            .map(|f| {
+                if let Some(url) = &f.details_url {
+                    format!("- {} ({}): {}", f.name, f.conclusion, url)
+                } else {
+                    format!("- {} ({})", f.name, f.conclusion)
+                }
+            })
+            .collect();
+
+        // Trigger AI-assisted CI failure resolution
+        self.trigger_ci_failure_resolution_follow_up(&workspace, &failed_checks.join("\n"))
+            .await?;
+
+        Ok(())
+    }
+
+    /// Trigger AI-assisted CI failure resolution via coding agent
+    async fn trigger_ci_failure_resolution_follow_up(
+        &self,
+        workspace: &Workspace,
+        failed_checks: &str,
+    ) -> Result<(), PrMonitorError> {
+        // Get the custom prompt from config, or use default
+        let config = self.config.read().await;
+        let prompt_template = config
+            .ci_failure_resolution_prompt
+            .as_deref()
+            .unwrap_or(DEFAULT_CI_FAILURE_RESOLUTION_PROMPT);
+
+        // Replace placeholders in prompt
+        let prompt = prompt_template.replace("{failed_checks}", failed_checks);
+
+        drop(config); // Release the lock before async operations
+
+        // Get or create a session for this follow-up
+        let session =
+            match Session::find_latest_by_workspace_id(&self.db.pool, workspace.id).await? {
+                Some(s) => s,
+                None => {
+                    Session::create(
+                        &self.db.pool,
+                        &CreateSession { executor: None },
+                        Uuid::new_v4(),
+                        workspace.id,
+                    )
+                    .await?
+                }
+            };
+
+        // Get executor profile from the latest coding agent process in this session
+        let Some(executor_profile_id) =
+            ExecutionProcess::latest_executor_profile_for_session(&self.db.pool, session.id)
+                .await?
+        else {
+            warn!(
+                "No executor profile found for session {}, skipping CI failure resolution follow-up",
+                session.id
+            );
+            return Ok(());
+        };
+
+        // Get latest agent session ID if one exists (for coding agent continuity)
+        let latest_agent_session_id = ExecutionProcess::find_latest_coding_agent_turn_session_id(
+            &self.db.pool,
+            session.id,
+        )
+        .await?;
+
+        let working_dir = workspace
+            .agent_working_dir
+            .as_ref()
+            .filter(|dir| !dir.is_empty())
+            .cloned();
+
+        // Build the action type (follow-up if session exists, otherwise initial)
+        let action_type = if let Some(agent_session_id) = latest_agent_session_id {
+            ExecutorActionType::CodingAgentFollowUpRequest(CodingAgentFollowUpRequest {
+                prompt,
+                session_id: agent_session_id,
+                executor_profile_id: executor_profile_id.clone(),
+                working_dir: working_dir.clone(),
+            })
+        } else {
+            ExecutorActionType::CodingAgentInitialRequest(CodingAgentInitialRequest {
+                prompt,
+                executor_profile_id: executor_profile_id.clone(),
+                working_dir,
+            })
+        };
+
+        let action = ExecutorAction::new(action_type, None);
+
+        self.container
+            .start_execution(
+                workspace,
+                &session,
+                &action,
+                &ExecutionProcessRunReason::CodingAgent,
+            )
+            .await
+            .map_err(|e| PrMonitorError::Container(e.to_string()))?;
+
+        info!(
+            "Triggered AI CI failure resolution for workspace {} (session {})",
             workspace.id, session.id
         );
 
