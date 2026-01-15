@@ -1,5 +1,4 @@
 import * as React from 'react';
-import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useHotkeysContext } from 'react-hotkeys-hook';
 import {
@@ -205,7 +204,5 @@ export function SlideOverPanel({
     </AnimatePresence>
   );
 
-  // Render as portal to body
-  if (typeof document === 'undefined') return null;
-  return createPortal(content, document.body);
+  return content;
 }
