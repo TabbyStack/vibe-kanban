@@ -7,6 +7,8 @@ import {
   useSensors,
   type DragEndEvent,
 } from '@dnd-kit/core';
+import { AnimatePresence, motion } from 'framer-motion';
+import { CaretRightIcon } from '@phosphor-icons/react';
 import { cn } from '@/lib/utils';
 import { useBoardTasksOverview } from '@/hooks/useBoardTasksOverview';
 import { useRegisterProjectCounts } from '@/hooks/useAggregateTaskCounts';
@@ -21,6 +23,14 @@ import type {
 } from 'shared/types';
 import type { FilterState } from '@/components/ui-new/primitives/FilterDisplayControls';
 import { statusColumnBgColors } from '@/utils/statusLabels';
+import { usePersistedExpanded } from '@/stores/useUiPreferencesStore';
+import type { PersistKey } from '@/stores/useUiPreferencesStore';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+  TooltipProvider,
+} from '@/components/ui/tooltip';
 
 const STATUS_ORDER: TaskStatus[] = [
   'todo',
@@ -112,6 +122,10 @@ export function ProjectSwimlane({
   const { tasksByStatus, totalCount, isLoading, error } = useBoardTasksOverview(
     project.id
   );
+
+  // Persisted expand/collapse state for this project (expanded by default)
+  const persistKey: PersistKey = `project-expanded:${project.id}`;
+  const [isExpanded, setExpanded] = usePersistedExpanded(persistKey, true);
 
   // Register task counts with the aggregate context for column header totals
   useRegisterProjectCounts(project.id, tasksByStatus, isLoading);
@@ -217,57 +231,104 @@ export function ProjectSwimlane({
 
   return (
     <ProjectProviderOverride projectId={project.id}>
-      <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
-        <div className="border-b border-panel/15">
-          {/* Project board header - Linear-style */}
-          <ProjectBoardHeader
-            project={project}
-            taskCount={filteredTotalCount}
-            isLoading={isLoading}
-            groupId={groupId}
-            groups={groups}
-            onCreateTask={onCreateTask}
-            onMoveToGroup={onMoveToGroup}
-            onOpenBoard={onOpenBoard}
-          />
+      <TooltipProvider>
+        <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
+          <div className="border-b border-panel/15">
+            {/* Project header with collapse toggle */}
+            <div className="flex items-center">
+              {/* Collapse toggle button */}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    type="button"
+                    onClick={() => setExpanded()}
+                    className={cn(
+                      'p-2 shrink-0',
+                      'text-low/60 hover:text-normal',
+                      'hover:bg-panel/30',
+                      'transition-all duration-150',
+                      'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/30'
+                    )}
+                  >
+                    <CaretRightIcon
+                      weight="bold"
+                      className={cn(
+                        'size-icon-xs transition-transform duration-150',
+                        isExpanded && 'rotate-90'
+                      )}
+                    />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="right" className="text-xs">
+                  {isExpanded ? 'Collapse project' : 'Expand project'}
+                </TooltipContent>
+              </Tooltip>
 
-          {/* Status columns grid - without the project name column */}
-          <div
-            className={cn(
-              'grid grid-cols-[180px_repeat(5,minmax(120px,1fr))]',
-              'transition-all duration-150 ease-out'
-            )}
-          >
-            {/* Empty spacer cell to align with the swimlane header */}
-            <div className="px-3 py-2" />
+              {/* Project board header - Linear-style */}
+              <div className="flex-1">
+                <ProjectBoardHeader
+                  project={project}
+                  taskCount={filteredTotalCount}
+                  isLoading={isLoading}
+                  groupId={groupId}
+                  groups={groups}
+                  onCreateTask={onCreateTask}
+                  onMoveToGroup={onMoveToGroup}
+                  onOpenBoard={onOpenBoard}
+                />
+              </div>
+            </div>
 
-            {/* Status columns */}
-            {STATUS_ORDER.map((status) => {
-              const tasks = filteredTasksByStatus[status];
+            {/* Status columns grid - animated expand/collapse */}
+            <AnimatePresence initial={false}>
+              {isExpanded && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.15, ease: [0.4, 0, 0.2, 1] }}
+                  className="overflow-hidden"
+                >
+                  <div
+                    className={cn(
+                      'grid grid-cols-[180px_repeat(5,minmax(120px,1fr))]',
+                      'transition-all duration-150 ease-out'
+                    )}
+                  >
+                    {/* Empty spacer cell to align with the swimlane header */}
+                    <div className="px-3 py-2" />
 
-              return (
-                <StatusCell key={status} status={status}>
-                  {isLoading ? (
-                    <div className="flex flex-col gap-1.5">
-                      <div className="skeleton h-12 w-full rounded-md" />
-                    </div>
-                  ) : tasks.length === 0 ? null : (
-                    tasks.map((task) => (
-                      <SwimlaneTaskCard
-                        key={task.id}
-                        task={task}
-                        projectId={project.id}
-                        isSelected={selectedTaskId === task.id}
-                        onClick={() => onTaskClick(project.id, task.id)}
-                      />
-                    ))
-                  )}
-                </StatusCell>
-              );
-            })}
+                    {/* Status columns */}
+                    {STATUS_ORDER.map((status) => {
+                      const tasks = filteredTasksByStatus[status];
+
+                      return (
+                        <StatusCell key={status} status={status}>
+                          {isLoading ? (
+                            <div className="flex flex-col gap-1.5">
+                              <div className="skeleton h-12 w-full rounded-md" />
+                            </div>
+                          ) : tasks.length === 0 ? null : (
+                            tasks.map((task) => (
+                              <SwimlaneTaskCard
+                                key={task.id}
+                                task={task}
+                                projectId={project.id}
+                                isSelected={selectedTaskId === task.id}
+                                onClick={() => onTaskClick(project.id, task.id)}
+                              />
+                            ))
+                          )}
+                        </StatusCell>
+                      );
+                    })}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
-        </div>
-      </DndContext>
+        </DndContext>
+      </TooltipProvider>
     </ProjectProviderOverride>
   );
 }
