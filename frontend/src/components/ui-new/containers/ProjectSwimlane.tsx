@@ -229,149 +229,151 @@ export function ProjectSwimlane({
       <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
         <div
           className={cn(
-          'group/row grid grid-cols-[180px_repeat(5,minmax(120px,1fr))]',
-          'border-b border-panel/15',
-          'transition-all duration-150 ease-out',
-          'hover:bg-panel/8'
-        )}
-      >
-        {/* Project name cell */}
-        <div className="px-3 py-2 flex items-center">
-          <div className="flex items-center gap-2 flex-1 min-w-0">
-            <KanbanIcon
-              weight="fill"
-              className="size-icon-sm text-brand shrink-0"
-            />
-            <span className="text-xs text-normal font-medium truncate">
-              {project.name}
-            </span>
-            <span
-              className={cn(
-                'text-[10px] tabular-nums shrink-0',
-                'px-1.5 py-0.5 rounded-sm',
-                'bg-panel/20 text-low/60'
-              )}
-            >
-              {isLoading ? '—' : filteredTotalCount}
-            </span>
-
-            {/* Actions - visible on row hover */}
-            <div
-              className={cn(
-                'flex items-center gap-1 ml-auto shrink-0',
-                'opacity-0 group-hover/row:opacity-100',
-                'transition-opacity duration-150'
-              )}
-            >
-              <button
-                type="button"
-                onClick={() => onCreateTask(project.id)}
+            'group/row grid grid-cols-[180px_repeat(5,minmax(120px,1fr))]',
+            'border-b border-panel/15',
+            'transition-all duration-150 ease-out',
+            'hover:bg-panel/8'
+          )}
+        >
+          {/* Project name cell */}
+          <div className="px-3 py-2 flex items-center">
+            <div className="flex items-center gap-2 flex-1 min-w-0">
+              <KanbanIcon
+                weight="fill"
+                className="size-icon-sm text-brand shrink-0"
+              />
+              <span className="text-xs text-normal font-medium truncate">
+                {project.name}
+              </span>
+              <span
                 className={cn(
-                  'icon-btn p-1 rounded-md',
-                  'text-low hover:text-normal',
-                  'hover:bg-panel/50',
-                  'transition-all duration-150',
-                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/30'
+                  'text-[10px] tabular-nums shrink-0',
+                  'px-1.5 py-0.5 rounded-sm',
+                  'bg-panel/20 text-low/60'
                 )}
-                title="New task"
               >
-                <PlusIcon className="size-icon-xs" />
-              </button>
+                {isLoading ? '—' : filteredTotalCount}
+              </span>
 
-              {/* Actions dropdown */}
-              {(onMoveToGroup || onOpenBoard) && (
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <button
-                      type="button"
-                      className={cn(
-                        'icon-btn p-1 rounded-md',
-                        'text-low hover:text-normal',
-                        'hover:bg-panel/50',
-                        'transition-all duration-150',
-                        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/30'
+              {/* Actions - visible on row hover */}
+              <div
+                className={cn(
+                  'flex items-center gap-1 ml-auto shrink-0',
+                  'opacity-0 group-hover/row:opacity-100',
+                  'transition-opacity duration-150'
+                )}
+              >
+                <button
+                  type="button"
+                  onClick={() => onCreateTask(project.id)}
+                  className={cn(
+                    'icon-btn p-1 rounded-md',
+                    'text-low hover:text-normal',
+                    'hover:bg-panel/50',
+                    'transition-all duration-150',
+                    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/30'
+                  )}
+                  title="New task"
+                >
+                  <PlusIcon className="size-icon-xs" />
+                </button>
+
+                {/* Actions dropdown */}
+                {(onMoveToGroup || onOpenBoard) && (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button
+                        type="button"
+                        className={cn(
+                          'icon-btn p-1 rounded-md',
+                          'text-low hover:text-normal',
+                          'hover:bg-panel/50',
+                          'transition-all duration-150',
+                          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/30'
+                        )}
+                      >
+                        <DotsThreeIcon weight="bold" className="size-icon-xs" />
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      {onOpenBoard && (
+                        <>
+                          <DropdownMenuItem
+                            onClick={() => onOpenBoard(project.id)}
+                          >
+                            Open board
+                          </DropdownMenuItem>
+                          {onMoveToGroup && <DropdownMenuSeparator />}
+                        </>
                       )}
-                    >
-                      <DotsThreeIcon weight="bold" className="size-icon-xs" />
-                    </button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    {onOpenBoard && (
-                      <>
-                        <DropdownMenuItem
-                          onClick={() => onOpenBoard(project.id)}
-                        >
-                          Open board
-                        </DropdownMenuItem>
-                        {onMoveToGroup && <DropdownMenuSeparator />}
-                      </>
-                    )}
-                    {onMoveToGroup && (
-                      <DropdownMenuSub>
-                        <DropdownMenuSubTrigger>
-                          Move to group
-                        </DropdownMenuSubTrigger>
-                        <DropdownMenuSubContent>
-                          {groupId && (
-                            <>
+                      {onMoveToGroup && (
+                        <DropdownMenuSub>
+                          <DropdownMenuSubTrigger>
+                            Move to group
+                          </DropdownMenuSubTrigger>
+                          <DropdownMenuSubContent>
+                            {groupId && (
+                              <>
+                                <DropdownMenuItem
+                                  onClick={() =>
+                                    onMoveToGroup(project.id, null)
+                                  }
+                                >
+                                  Remove from group
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                              </>
+                            )}
+                            {groups.map((group) => (
                               <DropdownMenuItem
-                                onClick={() => onMoveToGroup(project.id, null)}
+                                key={group.id}
+                                onClick={() =>
+                                  onMoveToGroup(project.id, group.id)
+                                }
+                                disabled={group.id === groupId}
                               >
-                                Remove from group
+                                {group.name}
                               </DropdownMenuItem>
-                              <DropdownMenuSeparator />
-                            </>
-                          )}
-                          {groups.map((group) => (
-                            <DropdownMenuItem
-                              key={group.id}
-                              onClick={() =>
-                                onMoveToGroup(project.id, group.id)
-                              }
-                              disabled={group.id === groupId}
-                            >
-                              {group.name}
-                            </DropdownMenuItem>
-                          ))}
-                          {groups.length === 0 && (
-                            <div className="px-2 py-1 text-sm text-low">
-                              No groups
-                            </div>
-                          )}
-                        </DropdownMenuSubContent>
-                      </DropdownMenuSub>
-                    )}
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              )}
+                            ))}
+                            {groups.length === 0 && (
+                              <div className="px-2 py-1 text-sm text-low">
+                                No groups
+                              </div>
+                            )}
+                          </DropdownMenuSubContent>
+                        </DropdownMenuSub>
+                      )}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                )}
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* Status columns */}
-        {STATUS_ORDER.map((status) => {
-          const tasks = filteredTasksByStatus[status];
+          {/* Status columns */}
+          {STATUS_ORDER.map((status) => {
+            const tasks = filteredTasksByStatus[status];
 
-          return (
-            <StatusCell key={status} status={status}>
-              {isLoading ? (
-                <div className="flex flex-col gap-1.5">
-                  <div className="skeleton h-12 w-full rounded-md" />
-                </div>
-              ) : tasks.length === 0 ? null : (
-                tasks.map((task) => (
-                  <SwimlaneTaskCard
-                    key={task.id}
-                    task={task}
-                    projectId={project.id}
-                    isSelected={selectedTaskId === task.id}
-                    onClick={() => onTaskClick(project.id, task.id)}
-                  />
-                ))
-              )}
-            </StatusCell>
-          );
-        })}
+            return (
+              <StatusCell key={status} status={status}>
+                {isLoading ? (
+                  <div className="flex flex-col gap-1.5">
+                    <div className="skeleton h-12 w-full rounded-md" />
+                  </div>
+                ) : tasks.length === 0 ? null : (
+                  tasks.map((task) => (
+                    <SwimlaneTaskCard
+                      key={task.id}
+                      task={task}
+                      projectId={project.id}
+                      isSelected={selectedTaskId === task.id}
+                      onClick={() => onTaskClick(project.id, task.id)}
+                    />
+                  ))
+                )}
+              </StatusCell>
+            );
+          })}
         </div>
       </DndContext>
     </ProjectProviderOverride>

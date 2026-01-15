@@ -1,4 +1,4 @@
-use std::{path::PathBuf, sync::Arc, time::Duration};
+use std::{path::Path, sync::Arc, time::Duration};
 
 use db::{
     DBService,
@@ -12,8 +12,7 @@ use db::{
     },
 };
 use executors::actions::{
-    ExecutorAction, ExecutorActionType,
-    coding_agent_follow_up::CodingAgentFollowUpRequest,
+    ExecutorAction, ExecutorActionType, coding_agent_follow_up::CodingAgentFollowUpRequest,
     coding_agent_initial::CodingAgentInitialRequest,
 };
 use serde_json::json;
@@ -194,7 +193,7 @@ impl<C: ContainerService + Send + Sync + 'static> PrMonitorService<C> {
             }
         } else {
             // For merged/closed PRs, preserve existing CI status or set to Unknown
-            pr_merge.pr_info.ci_status.clone()
+            pr_merge.pr_info.ci_status
         };
 
         debug!(
@@ -273,13 +272,13 @@ impl<C: ContainerService + Send + Sync + 'static> PrMonitorService<C> {
             }
 
             // Check for CI failures and attempt to fix them
-            if matches!(ci_status, CiStatus::Failing) {
-                if let Err(e) = self.check_and_resolve_ci_failures(pr_merge).await {
-                    warn!(
-                        "Error checking/resolving CI failures for PR #{}: {}",
-                        pr_merge.pr_info.number, e
-                    );
-                }
+            if matches!(ci_status, CiStatus::Failing)
+                && let Err(e) = self.check_and_resolve_ci_failures(pr_merge).await
+            {
+                warn!(
+                    "Error checking/resolving CI failures for PR #{}: {}",
+                    pr_merge.pr_info.number, e
+                );
             }
         }
 
@@ -309,7 +308,10 @@ impl<C: ContainerService + Send + Sync + 'static> PrMonitorService<C> {
 
         // Get the task to check if it's in review
         let Some(task) = Task::find_by_id(&self.db.pool, workspace.task_id).await? else {
-            debug!("Task {} not found for workspace {}", workspace.task_id, workspace.id);
+            debug!(
+                "Task {} not found for workspace {}",
+                workspace.task_id, workspace.id
+            );
             return Ok(());
         };
 
@@ -324,9 +326,12 @@ impl<C: ContainerService + Send + Sync + 'static> PrMonitorService<C> {
 
         // Check if there's already a running execution process for this workspace
         // to avoid triggering multiple conflict resolution attempts
-        if self.container.has_running_processes(task.id).await.map_err(|e| {
-            PrMonitorError::Container(e.to_string())
-        })? {
+        if self
+            .container
+            .has_running_processes(task.id)
+            .await
+            .map_err(|e| PrMonitorError::Container(e.to_string()))?
+        {
             debug!(
                 "Skipping conflict check for workspace {} - execution already in progress",
                 workspace.id
@@ -336,7 +341,10 @@ impl<C: ContainerService + Send + Sync + 'static> PrMonitorService<C> {
 
         // Get the repo for this PR
         let Some(repo) = Repo::find_by_id(&self.db.pool, pr_merge.repo_id).await? else {
-            warn!("Repo {} not found for PR #{}", pr_merge.repo_id, pr_merge.pr_info.number);
+            warn!(
+                "Repo {} not found for PR #{}",
+                pr_merge.repo_id, pr_merge.pr_info.number
+            );
             return Ok(());
         };
 
@@ -356,16 +364,20 @@ impl<C: ContainerService + Send + Sync + 'static> PrMonitorService<C> {
 
         // Check if our branch is behind the target branch
         let target_branch = &pr_merge.target_branch_name;
-        let (_, behind) = match self.git.get_branch_status(&worktree_path, &workspace.branch, target_branch) {
-            Ok(status) => status,
-            Err(e) => {
-                debug!(
-                    "Failed to check branch status for workspace {}: {}",
-                    workspace.id, e
-                );
-                return Ok(());
-            }
-        };
+        let (_, behind) =
+            match self
+                .git
+                .get_branch_status(&worktree_path, &workspace.branch, target_branch)
+            {
+                Ok(status) => status,
+                Err(e) => {
+                    debug!(
+                        "Failed to check branch status for workspace {}: {}",
+                        workspace.id, e
+                    );
+                    return Ok(());
+                }
+            };
 
         // If not behind, no conflicts possible
         if behind == 0 {
@@ -382,12 +394,9 @@ impl<C: ContainerService + Send + Sync + 'static> PrMonitorService<C> {
         );
 
         // Attempt auto-resolution via rebase
-        let resolution = self.try_auto_resolve_conflicts(
-            &workspace,
-            &repo,
-            &worktree_path,
-            target_branch,
-        ).await;
+        let resolution = self
+            .try_auto_resolve_conflicts(&workspace, &repo, &worktree_path, target_branch)
+            .await;
 
         match resolution {
             MergeConflictResolution::NoConflicts | MergeConflictResolution::Resolved => {
@@ -396,24 +405,29 @@ impl<C: ContainerService + Send + Sync + 'static> PrMonitorService<C> {
                     pr_merge.pr_info.number, workspace.id
                 );
             }
-            MergeConflictResolution::Failed { conflicted_files, message } => {
+            MergeConflictResolution::Failed {
+                conflicted_files,
+                message,
+            } => {
                 warn!(
                     "Auto-resolution failed for PR #{}: {}. Triggering AI conflict resolution.",
                     pr_merge.pr_info.number, message
                 );
 
                 // Trigger AI-assisted conflict resolution if there are conflicted files
-                if !conflicted_files.is_empty() {
-                    if let Err(e) = self.trigger_conflict_resolution_follow_up(
-                        &workspace,
-                        target_branch,
-                        &conflicted_files,
-                    ).await {
-                        error!(
-                            "Failed to trigger AI conflict resolution for PR #{}: {}",
-                            pr_merge.pr_info.number, e
-                        );
-                    }
+                if !conflicted_files.is_empty()
+                    && let Err(e) = self
+                        .trigger_conflict_resolution_follow_up(
+                            &workspace,
+                            target_branch,
+                            &conflicted_files,
+                        )
+                        .await
+                {
+                    error!(
+                        "Failed to trigger AI conflict resolution for PR #{}: {}",
+                        pr_merge.pr_info.number, e
+                    );
                 }
             }
         }
@@ -426,20 +440,24 @@ impl<C: ContainerService + Send + Sync + 'static> PrMonitorService<C> {
         &self,
         workspace: &Workspace,
         repo: &Repo,
-        worktree_path: &PathBuf,
+        worktree_path: &Path,
         target_branch: &str,
     ) -> MergeConflictResolution {
         // Check if there are commits on the target branch that aren't in our branch
-        let (_, behind) = match self.git.get_branch_status(worktree_path, &workspace.branch, target_branch) {
-            Ok(status) => status,
-            Err(e) => {
-                warn!(
-                    "Failed to check branch status for conflict detection: {}",
-                    e
-                );
-                return MergeConflictResolution::NoConflicts;
-            }
-        };
+        let (_, behind) =
+            match self
+                .git
+                .get_branch_status(worktree_path, &workspace.branch, target_branch)
+            {
+                Ok(status) => status,
+                Err(e) => {
+                    warn!(
+                        "Failed to check branch status for conflict detection: {}",
+                        e
+                    );
+                    return MergeConflictResolution::NoConflicts;
+                }
+            };
 
         // If our branch is not behind the target, there are no conflicts to resolve
         if behind == 0 {
@@ -456,14 +474,18 @@ impl<C: ContainerService + Send + Sync + 'static> PrMonitorService<C> {
         );
 
         // Get the base commit that was used when the branch was created
-        let base_commit = match self.git.get_base_commit(worktree_path, &workspace.branch, target_branch) {
-            Ok(commit) => commit.to_string(),
-            Err(e) => {
-                warn!("Failed to get base commit for rebase: {}", e);
-                // Fall back to using target branch as both old and new base
-                target_branch.to_string()
-            }
-        };
+        let base_commit =
+            match self
+                .git
+                .get_base_commit(worktree_path, &workspace.branch, target_branch)
+            {
+                Ok(commit) => commit.to_string(),
+                Err(e) => {
+                    warn!("Failed to get base commit for rebase: {}", e);
+                    // Fall back to using target branch as both old and new base
+                    target_branch.to_string()
+                }
+            };
 
         // Perform the rebase
         match self.git.rebase_branch(
@@ -480,7 +502,10 @@ impl<C: ContainerService + Send + Sync + 'static> PrMonitorService<C> {
                 );
 
                 // Push the rebased branch (force push required after rebase)
-                match self.git.push_to_remote(worktree_path, &workspace.branch, true) {
+                match self
+                    .git
+                    .push_to_remote(worktree_path, &workspace.branch, true)
+                {
                     Ok(()) => {
                         info!(
                             "Successfully pushed rebased branch '{}' to remote",
@@ -502,11 +527,15 @@ impl<C: ContainerService + Send + Sync + 'static> PrMonitorService<C> {
             }
             Err(GitServiceError::MergeConflicts(msg)) => {
                 // Rebase failed due to conflicts - get the list of conflicted files
-                let conflicted_files = self.git.get_conflicted_files(worktree_path).unwrap_or_default();
+                let conflicted_files = self
+                    .git
+                    .get_conflicted_files(worktree_path)
+                    .unwrap_or_default();
 
                 warn!(
                     "Rebase failed with conflicts in {} files: {:?}",
-                    conflicted_files.len(), conflicted_files
+                    conflicted_files.len(),
+                    conflicted_files
                 );
 
                 // Abort the failed rebase to leave the branch in a clean state
@@ -582,11 +611,9 @@ impl<C: ContainerService + Send + Sync + 'static> PrMonitorService<C> {
         };
 
         // Get latest agent session ID if one exists (for coding agent continuity)
-        let latest_agent_session_id = ExecutionProcess::find_latest_coding_agent_turn_session_id(
-            &self.db.pool,
-            session.id,
-        )
-        .await?;
+        let latest_agent_session_id =
+            ExecutionProcess::find_latest_coding_agent_turn_session_id(&self.db.pool, session.id)
+                .await?;
 
         let working_dir = workspace
             .agent_working_dir
@@ -631,7 +658,10 @@ impl<C: ContainerService + Send + Sync + 'static> PrMonitorService<C> {
     }
 
     /// Check if a PR has CI failures and attempt to fix them
-    async fn check_and_resolve_ci_failures(&self, pr_merge: &PrMerge) -> Result<(), PrMonitorError> {
+    async fn check_and_resolve_ci_failures(
+        &self,
+        pr_merge: &PrMerge,
+    ) -> Result<(), PrMonitorError> {
         // Check if CI failure auto-fix is enabled
         let config = self.config.read().await;
         if !config.ci_failure_auto_fix_enabled {
@@ -661,7 +691,10 @@ impl<C: ContainerService + Send + Sync + 'static> PrMonitorService<C> {
 
         // Get the task to check if it's in review
         let Some(task) = Task::find_by_id(&self.db.pool, workspace.task_id).await? else {
-            debug!("Task {} not found for workspace {}", workspace.task_id, workspace.id);
+            debug!(
+                "Task {} not found for workspace {}",
+                workspace.task_id, workspace.id
+            );
             return Ok(());
         };
 
@@ -675,9 +708,12 @@ impl<C: ContainerService + Send + Sync + 'static> PrMonitorService<C> {
         }
 
         // Check if there's already a running execution process for this workspace
-        if self.container.has_running_processes(task.id).await.map_err(|e| {
-            PrMonitorError::Container(e.to_string())
-        })? {
+        if self
+            .container
+            .has_running_processes(task.id)
+            .await
+            .map_err(|e| PrMonitorError::Container(e.to_string()))?
+        {
             debug!(
                 "Skipping CI failure check for workspace {} - execution already in progress",
                 workspace.id
@@ -699,7 +735,8 @@ impl<C: ContainerService + Send + Sync + 'static> PrMonitorService<C> {
 
         info!(
             "Found {} CI failures for PR #{}, triggering AI fix",
-            failures.len(), pr_merge.pr_info.number
+            failures.len(),
+            pr_merge.pr_info.number
         );
 
         // Format the failed checks for the prompt
@@ -767,11 +804,9 @@ impl<C: ContainerService + Send + Sync + 'static> PrMonitorService<C> {
         };
 
         // Get latest agent session ID if one exists (for coding agent continuity)
-        let latest_agent_session_id = ExecutionProcess::find_latest_coding_agent_turn_session_id(
-            &self.db.pool,
-            session.id,
-        )
-        .await?;
+        let latest_agent_session_id =
+            ExecutionProcess::find_latest_coding_agent_turn_session_id(&self.db.pool, session.id)
+                .await?;
 
         let working_dir = workspace
             .agent_working_dir

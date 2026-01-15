@@ -730,9 +730,7 @@ impl GhCli {
             })
             .map(|check| CiFailureDetails {
                 name: check.name,
-                conclusion: check
-                    .conclusion
-                    .unwrap_or_else(|| "unknown".to_string()),
+                conclusion: check.conclusion.unwrap_or_else(|| "unknown".to_string()),
                 details_url: check.details_url,
             })
             .collect();
