@@ -1,6 +1,14 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
+export type SlideOverType = 'task' | 'workspace' | null;
+
+export interface SlideOverData {
+  projectId?: string;
+  taskId?: string;
+  workspaceId?: string;
+}
+
 type LayoutState = {
   // Panel visibility
   isSidebarVisible: boolean;
@@ -10,6 +18,12 @@ type LayoutState = {
   isChangesMode: boolean;
   isLogsMode: boolean;
   isPreviewMode: boolean;
+
+  // Slide-over panel state
+  isSlideOverOpen: boolean;
+  isSlideOverExpanded: boolean;
+  slideOverType: SlideOverType;
+  slideOverData: SlideOverData | null;
 
   // Preview refresh coordination
   previewRefreshKey: number;
@@ -35,6 +49,12 @@ type LayoutState = {
 
   // Reset for create mode
   resetForCreateMode: () => void;
+
+  // Slide-over actions
+  openSlideOver: (type: SlideOverType, data: SlideOverData) => void;
+  closeSlideOver: () => void;
+  toggleSlideOverExpanded: () => void;
+  setSlideOverExpanded: (expanded: boolean) => void;
 };
 
 // Check if screen is wide enough to keep sidebar visible
@@ -51,6 +71,12 @@ export const useLayoutStore = create<LayoutState>()(
       isLogsMode: false,
       isPreviewMode: false,
       previewRefreshKey: 0,
+
+      // Slide-over initial state
+      isSlideOverOpen: false,
+      isSlideOverExpanded: false,
+      slideOverType: null,
+      slideOverData: null,
 
       toggleSidebar: () =>
         set((s) => ({ isSidebarVisible: !s.isSidebarVisible })),
@@ -186,6 +212,27 @@ export const useLayoutStore = create<LayoutState>()(
           isLogsMode: false,
           isPreviewMode: false,
         }),
+
+      // Slide-over actions
+      openSlideOver: (type, data) =>
+        set({
+          isSlideOverOpen: true,
+          slideOverType: type,
+          slideOverData: data,
+        }),
+
+      closeSlideOver: () =>
+        set({
+          isSlideOverOpen: false,
+          isSlideOverExpanded: false,
+          slideOverType: null,
+          slideOverData: null,
+        }),
+
+      toggleSlideOverExpanded: () =>
+        set((s) => ({ isSlideOverExpanded: !s.isSlideOverExpanded })),
+
+      setSlideOverExpanded: (expanded) => set({ isSlideOverExpanded: expanded }),
     }),
     {
       name: 'layout-preferences',
@@ -212,3 +259,11 @@ export const useIsGitPanelVisible = () =>
 export const useIsChangesMode = () => useLayoutStore((s) => s.isChangesMode);
 export const useIsLogsMode = () => useLayoutStore((s) => s.isLogsMode);
 export const useIsPreviewMode = () => useLayoutStore((s) => s.isPreviewMode);
+
+// Slide-over convenience hooks
+export const useIsSlideOverOpen = () =>
+  useLayoutStore((s) => s.isSlideOverOpen);
+export const useIsSlideOverExpanded = () =>
+  useLayoutStore((s) => s.isSlideOverExpanded);
+export const useSlideOverType = () => useLayoutStore((s) => s.slideOverType);
+export const useSlideOverData = () => useLayoutStore((s) => s.slideOverData);

@@ -145,3 +145,12 @@ export const useKeySubmitComment = createSemanticHook(Action.SUBMIT_COMMENT);
 export const useKeyCycleViewBackward = createSemanticHook(
   Action.CYCLE_VIEW_BACKWARD
 );
+
+/**
+ * Toggle expand action - typically Cmd+E
+ * Toggle between side panel and full page view
+ *
+ * @example
+ * useKeyToggleExpand(() => toggleExpanded(), { scope: Scope.SLIDE_PANEL });
+ */
+export const useKeyToggleExpand = createSemanticHook(Action.TOGGLE_EXPAND);

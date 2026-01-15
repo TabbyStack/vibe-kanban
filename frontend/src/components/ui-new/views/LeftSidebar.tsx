@@ -5,6 +5,7 @@ import {
   EyeIcon,
   KanbanIcon,
   SidebarSimpleIcon,
+  ArrowsOutSimpleIcon,
 } from '@phosphor-icons/react';
 import { cn } from '@/lib/utils';
 import type { SidebarWorkspace } from '@/components/ui-new/hooks/useWorkspaces';
@@ -22,6 +23,8 @@ interface LeftSidebarProps {
   onStopWorkspace?: (workspaceId: string) => void;
   /** Handler to click on a workspace item (navigates to workspace) */
   onWorkspaceClick?: (workspaceId: string) => void;
+  /** Handler to expand a workspace in slide-over panel */
+  onWorkspaceExpand?: (workspaceId: string) => void;
   /** Toggle sidebar visibility */
   onToggleSidebar?: () => void;
   className?: string;
@@ -58,6 +61,7 @@ interface WorkspaceItemProps {
   workspace: SidebarWorkspace;
   onStop?: () => void;
   onClick?: () => void;
+  onExpand?: () => void;
   showPRBadge?: boolean;
 }
 
@@ -65,6 +69,7 @@ function WorkspaceItem({
   workspace,
   onStop,
   onClick,
+  onExpand,
   showPRBadge,
 }: WorkspaceItemProps) {
   return (
@@ -92,26 +97,48 @@ function WorkspaceItem({
       {showPRBadge && workspace.prStatus === 'open' && (
         <span className="badge badge-brand text-[9px] px-1.5 py-0.5">PR</span>
       )}
-      {onStop && workspace.isRunning && (
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            onStop();
-          }}
-          className={cn(
-            'icon-btn p-1 rounded-md',
-            'text-low hover:text-error',
-            'hover:bg-error/10',
-            'opacity-0 group-hover:opacity-100',
-            'transition-all duration-150',
-            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-error/30'
-          )}
-          title="Stop workspace"
-        >
-          <StopIcon className="size-3" weight="fill" />
-        </button>
-      )}
+      <div className="flex items-center gap-0.5">
+        {onExpand && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onExpand();
+            }}
+            className={cn(
+              'icon-btn p-1 rounded-md',
+              'text-low hover:text-normal',
+              'hover:bg-panel/50',
+              'opacity-0 group-hover:opacity-100',
+              'transition-all duration-150',
+              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/30'
+            )}
+            title="Preview workspace"
+          >
+            <ArrowsOutSimpleIcon className="size-3" weight="bold" />
+          </button>
+        )}
+        {onStop && workspace.isRunning && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onStop();
+            }}
+            className={cn(
+              'icon-btn p-1 rounded-md',
+              'text-low hover:text-error',
+              'hover:bg-error/10',
+              'opacity-0 group-hover:opacity-100',
+              'transition-all duration-150',
+              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-error/30'
+            )}
+            title="Stop workspace"
+          >
+            <StopIcon className="size-3" weight="fill" />
+          </button>
+        )}
+      </div>
     </div>
   );
 }
@@ -123,6 +150,7 @@ export function LeftSidebar({
   onCreateProject,
   onStopWorkspace,
   onWorkspaceClick,
+  onWorkspaceExpand,
   onToggleSidebar,
   className,
 }: LeftSidebarProps) {
@@ -202,6 +230,9 @@ export function LeftSidebar({
                 onClick={
                   onWorkspaceClick ? () => onWorkspaceClick(ws.id) : undefined
                 }
+                onExpand={
+                  onWorkspaceExpand ? () => onWorkspaceExpand(ws.id) : undefined
+                }
               />
             ))}
           </div>
@@ -232,6 +263,9 @@ export function LeftSidebar({
                 showPRBadge
                 onClick={
                   onWorkspaceClick ? () => onWorkspaceClick(ws.id) : undefined
+                }
+                onExpand={
+                  onWorkspaceExpand ? () => onWorkspaceExpand(ws.id) : undefined
                 }
               />
             ))}

@@ -9,6 +9,7 @@ export enum Scope {
   APPROVALS = 'approvals',
   FOLLOW_UP = 'follow-up',
   FOLLOW_UP_READY = 'follow-up-ready',
+  SLIDE_PANEL = 'slide-panel',
 }
 
 export enum Action {
@@ -30,6 +31,7 @@ export enum Action {
   SUBMIT_TASK_ALT = 'submit_task_alt',
   SUBMIT_COMMENT = 'submit_comment',
   CYCLE_VIEW_BACKWARD = 'cycle_view_backward',
+  TOGGLE_EXPAND = 'toggle_expand',
 }
 
 export interface KeyBinding {
@@ -217,6 +219,22 @@ export const keyBindings: KeyBinding[] = [
     scopes: [Scope.EDIT_COMMENT],
     description: 'Submit review comment',
     group: 'Comments',
+  },
+
+  // Slide panel actions
+  {
+    action: Action.EXIT,
+    keys: 'esc',
+    scopes: [Scope.SLIDE_PANEL],
+    description: 'Close or collapse slide-over panel',
+    group: 'Navigation',
+  },
+  {
+    action: Action.TOGGLE_EXPAND,
+    keys: ['meta+e', 'ctrl+e'],
+    scopes: [Scope.SLIDE_PANEL],
+    description: 'Toggle panel expansion',
+    group: 'Navigation',
   },
 ];
 

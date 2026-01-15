@@ -7,7 +7,8 @@ import { SwimlaneKanban } from '@/components/ui-new/views/SwimlaneKanban';
 import { Navbar } from '@/components/layout/Navbar';
 import { useProjectGroupMutations } from '@/hooks/useProjectGroupMutations';
 import { openTaskForm } from '@/lib/openTaskForm';
-import { TaskDetailsPanel } from '@/components/ui-new/containers/TaskDetailsPanel';
+import { TaskSlideOverPanel } from '@/components/ui-new/panels/TaskSlideOverPanel';
+import { WorkspaceSlideOverPanel } from '@/components/ui-new/panels/WorkspaceSlideOverPanel';
 import { LeftSidebar } from '@/components/ui-new/views/LeftSidebar';
 import { CreateProjectDialog } from '@/components/ui-new/dialogs/CreateProjectDialog';
 import { useWorkspaces } from '@/components/ui-new/hooks/useWorkspaces';
@@ -91,6 +92,11 @@ export function AllBoardsLayout() {
   );
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
 
+  // Track selected workspace for slide-over preview
+  const [previewWorkspaceId, setPreviewWorkspaceId] = useState<string | null>(
+    null
+  );
+
   // Mutations for creating/managing groups
   const { createGroup, assignProjectToGroup } = useProjectGroupMutations();
 
@@ -171,6 +177,11 @@ export function AllBoardsLayout() {
     },
     [navigate]
   );
+
+  const handleWorkspaceExpand = useCallback((workspaceId: string) => {
+    // Open workspace in slide-over panel
+    setPreviewWorkspaceId(workspaceId);
+  }, []);
 
   const handleCreateTask = useCallback(
     (projectId: string, status?: TaskStatus) => {
@@ -260,6 +271,7 @@ export function AllBoardsLayout() {
               onCreateProject={handleSidebarCreateProject}
               onStopWorkspace={handleStopWorkspace}
               onWorkspaceClick={handleSidebarWorkspaceClick}
+              onWorkspaceExpand={handleWorkspaceExpand}
               onToggleSidebar={toggleLeftSidebar}
             />
           </Allotment.Pane>
@@ -299,19 +311,34 @@ export function AllBoardsLayout() {
               inReviewCount={inReviewCount}
             />
           </Allotment.Pane>
-          <Allotment.Pane
-            minSize={selectedTaskId ? 400 : 0}
-            visible={!!selectedTaskId}
-          >
-            {selectedProjectId && selectedTaskId && (
-              <TaskDetailsPanel
-                projectId={selectedProjectId}
-                taskId={selectedTaskId}
-                onClose={handleClosePanel}
-              />
-            )}
-          </Allotment.Pane>
         </Allotment>
+
+        {/* Slide-over panel for task details */}
+        {selectedProjectId && (
+          <TaskSlideOverPanel
+            projectId={selectedProjectId}
+            taskId={selectedTaskId ?? ''}
+            open={!!selectedTaskId}
+            onOpenChange={(open) => {
+              if (!open) {
+                handleClosePanel();
+              }
+            }}
+          />
+        )}
+
+        {/* Slide-over panel for workspace preview */}
+        {previewWorkspaceId && (
+          <WorkspaceSlideOverPanel
+            workspaceId={previewWorkspaceId}
+            open={!!previewWorkspaceId}
+            onOpenChange={(open) => {
+              if (!open) {
+                setPreviewWorkspaceId(null);
+              }
+            }}
+          />
+        )}
       </div>
     </div>
   );
