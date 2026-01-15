@@ -71,6 +71,7 @@ export type PersistKey =
   | `system:${string}`
   | `error:${string}`
   | `entry:${string}`
+  | `work-section:${string}`
   | `left-sidebar-team-${string}`
   | `project-expanded:${string}`;
 
