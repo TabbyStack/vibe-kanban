@@ -216,7 +216,10 @@ export function ProjectSwimlane({
             </span>
           </div>
         </div>
-        <div className="flex-1 p-base text-sm text-error border-l border-panel" style={{ minWidth: '700px' }}>
+        <div
+          className="flex-1 p-base text-sm text-error border-l border-panel"
+          style={{ minWidth: '700px' }}
+        >
           Failed to load tasks
         </div>
       </div>
