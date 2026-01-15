@@ -60,6 +60,7 @@ export type PersistKey =
   | typeof PERSIST_KEYS.changesPanelWidth
   | typeof PERSIST_KEYS.fileTreeHeight
   | typeof PERSIST_KEYS.slideOverPanelWidth
+  | 'slide-over-peek-mode'
   | `repo-card-${string}`
   | `diff:${string}`
   | `edit:${string}`

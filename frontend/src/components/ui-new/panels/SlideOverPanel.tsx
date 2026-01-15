@@ -4,16 +4,27 @@ import { useHotkeysContext } from 'react-hotkeys-hook';
 import {
   ArrowsInSimpleIcon,
   ArrowsOutSimpleIcon,
-  XIcon,
+  CaretDoubleRightIcon,
+  SidebarSimpleIcon,
+  BrowserIcon,
 } from '@phosphor-icons/react';
 
 import { cn } from '@/lib/utils';
 import { useKeyExit, useKeyToggleExpand, Scope } from '@/keyboard';
-import { usePaneSize, PERSIST_KEYS } from '@/stores/useUiPreferencesStore';
+import {
+  usePaneSize,
+  usePersistedExpanded,
+  PERSIST_KEYS,
+} from '@/stores/useUiPreferencesStore';
 
 const MIN_WIDTH = 360;
 const MAX_WIDTH = 900;
 const DEFAULT_WIDTH = 480;
+// Center mode uses percentage-based width for responsive sizing
+const CENTER_MAX_WIDTH = 1400;
+const CENTER_WIDTH_PERCENT = 90; // 90% of viewport
+
+export type PeekMode = 'side' | 'center';
 
 export interface SlideOverPanelProps {
   open: boolean;
@@ -43,12 +54,17 @@ export function SlideOverPanel({
   const panelRef = React.useRef<HTMLDivElement>(null);
   const [isResizing, setIsResizing] = React.useState(false);
 
-  // Persist panel width
+  // Persist panel width and peek mode
   const [persistedWidth, setPersistedWidth] = usePaneSize(
     PERSIST_KEYS.slideOverPanelWidth,
     DEFAULT_WIDTH
   );
   const [width, setWidth] = React.useState(Number(persistedWidth));
+  const [peekMode, setPeekMode] = usePersistedExpanded(
+    'slide-over-peek-mode' as const,
+    true // true = side, false = center
+  );
+  const currentPeekMode: PeekMode = peekMode ? 'side' : 'center';
 
   // Sync with persisted value on mount
   React.useEffect(() => {
@@ -128,14 +144,17 @@ export function SlideOverPanel({
   }, [expanded, onExpandedChange]);
 
   const handleBackdropClick = React.useCallback(() => {
-    if (!expanded) {
-      onOpenChange(false);
-    }
-  }, [expanded, onOpenChange]);
+    onOpenChange(false);
+  }, [onOpenChange]);
 
-  // Resize handling
+  const handleTogglePeekMode = React.useCallback(() => {
+    setPeekMode(!peekMode);
+  }, [peekMode, setPeekMode]);
+
+  // Resize handling (only for side mode)
   const handleResizeStart = React.useCallback(
     (e: React.MouseEvent) => {
+      if (currentPeekMode !== 'side') return;
       e.preventDefault();
       setIsResizing(true);
 
@@ -161,7 +180,7 @@ export function SlideOverPanel({
       document.addEventListener('mousemove', handleMouseMove);
       document.addEventListener('mouseup', handleMouseUp);
     },
-    [width, setPersistedWidth]
+    [width, setPersistedWidth, currentPeekMode]
   );
 
   // Save width on resize end
@@ -171,7 +190,82 @@ export function SlideOverPanel({
     }
   }, [isResizing, width, persistedWidth, setPersistedWidth]);
 
-  const panelWidth = expanded ? '100%' : `${width}px`;
+  // Determine panel dimensions based on mode
+  const isSideMode = currentPeekMode === 'side';
+  const panelWidth = expanded ? '100%' : isSideMode ? `${width}px` : `${CENTER_WIDTH_PERCENT}vw`;
+
+  // Render the panel header and content (shared between modes)
+  const renderPanelInner = () => (
+    <>
+      {/* Resize handle (side mode only) */}
+      {isSideMode && !expanded && (
+        <div
+          onMouseDown={handleResizeStart}
+          className={cn(
+            'absolute left-0 top-0 bottom-0 w-1 cursor-ew-resize',
+            'hover:bg-brand/50 transition-colors',
+            isResizing && 'bg-brand'
+          )}
+        />
+      )}
+
+      {/* Header */}
+      <div className="flex items-center px-3 py-2 border-b border-panel/40 shrink-0">
+        {/* Left side: Controls */}
+        <div className="flex items-center gap-0.5 shrink-0">
+          {/* Close button */}
+          <button
+            onClick={handleClose}
+            className="flex items-center justify-center w-7 h-7 rounded hover:bg-secondary text-low hover:text-normal transition-colors"
+            title="Close panel"
+          >
+            <CaretDoubleRightIcon className="size-icon-sm" weight="bold" />
+          </button>
+
+          {/* Peek mode toggle */}
+          <button
+            onClick={handleTogglePeekMode}
+            className={cn(
+              'flex items-center justify-center w-7 h-7 rounded transition-colors',
+              'text-low hover:text-normal hover:bg-secondary'
+            )}
+            title={isSideMode ? 'Switch to center peek' : 'Switch to side peek'}
+          >
+            {isSideMode ? (
+              <BrowserIcon className="size-icon-sm" />
+            ) : (
+              <SidebarSimpleIcon className="size-icon-sm" />
+            )}
+          </button>
+
+          {/* Expand/Collapse toggle */}
+          {onExpandedChange && (
+            <button
+              onClick={handleToggleExpand}
+              className="flex items-center justify-center w-7 h-7 rounded hover:bg-secondary text-low hover:text-normal transition-colors"
+              title={expanded ? 'Collapse panel' : 'Expand to full page'}
+            >
+              {expanded ? (
+                <ArrowsInSimpleIcon className="size-icon-sm" weight="bold" />
+              ) : (
+                <ArrowsOutSimpleIcon className="size-icon-sm" weight="bold" />
+              )}
+            </button>
+          )}
+        </div>
+
+        {/* Title */}
+        {title && (
+          <div className="text-sm text-high truncate min-w-0 ml-2 flex-1">
+            {title}
+          </div>
+        )}
+      </div>
+
+      {/* Content */}
+      <div className="flex-1 min-h-0 overflow-y-auto">{children}</div>
+    </>
+  );
 
   const content = (
     <AnimatePresence mode="wait">
@@ -191,71 +285,59 @@ export function SlideOverPanel({
             onClick={handleBackdropClick}
           />
 
-          {/* Panel */}
-          <motion.div
-            ref={panelRef}
-            key="panel"
-            initial={{ x: '100%' }}
-            animate={{ x: 0 }}
-            exit={{ x: '100%' }}
-            transition={transition}
-            style={{ width: panelWidth }}
-            className={cn(
-              'fixed inset-y-0 right-0 z-50',
-              'flex flex-col',
-              'bg-primary border-l border-panel/40',
-              'shadow-xl shadow-black/20',
-              className
-            )}
-          >
-            {/* Resize handle */}
-            {!expanded && (
-              <div
-                onMouseDown={handleResizeStart}
+          {/* Center mode: uses flex container for centering */}
+          {!isSideMode && !expanded && (
+            <div className="fixed inset-0 z-50 flex items-start justify-center px-16 pt-10 pointer-events-none">
+              <motion.div
+                ref={panelRef}
+                key="panel-center"
+                initial={{ opacity: 0, scale: 0.95, y: -10 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: -10 }}
+                transition={transition}
+                style={{
+                  width: panelWidth,
+                  maxWidth: `${CENTER_MAX_WIDTH}px`,
+                  maxHeight: 'calc(100vh - 80px)',
+                }}
                 className={cn(
-                  'absolute left-0 top-0 bottom-0 w-1 cursor-ew-resize',
-                  'hover:bg-brand/50 transition-colors',
-                  isResizing && 'bg-brand'
+                  'flex flex-col pointer-events-auto',
+                  'bg-primary',
+                  'shadow-xl shadow-black/20',
+                  'rounded-lg border border-panel/40',
+                  'px-6 py-4',
+                  className
                 )}
-              />
-            )}
-
-            {/* Header */}
-            <div className="flex items-center justify-between px-4 py-3 border-b border-panel/40">
-              <div className="flex-1 min-w-0">
-                {title && (
-                  <div className="text-base font-medium text-high truncate">
-                    {title}
-                  </div>
-                )}
-              </div>
-              <div className="flex items-center gap-1 ml-2">
-                {onExpandedChange && (
-                  <button
-                    onClick={handleToggleExpand}
-                    className="flex items-center justify-center w-7 h-7 rounded hover:bg-secondary text-low hover:text-normal transition-colors"
-                    title={expanded ? 'Collapse panel' : 'Expand to full page'}
-                  >
-                    {expanded ? (
-                      <ArrowsInSimpleIcon className="size-icon-sm" weight="bold" />
-                    ) : (
-                      <ArrowsOutSimpleIcon className="size-icon-sm" weight="bold" />
-                    )}
-                  </button>
-                )}
-                <button
-                  onClick={handleClose}
-                  className="flex items-center justify-center w-7 h-7 rounded hover:bg-secondary text-low hover:text-normal transition-colors"
-                  title="Close panel"
-                >
-                  <XIcon className="size-icon-sm" />
-                </button>
-              </div>
+              >
+                {renderPanelInner()}
+              </motion.div>
             </div>
+          )}
 
-            {/* Content */}
-            <div className="flex-1 min-h-0 overflow-y-auto">{children}</div>
-          </motion.div>
+          {/* Side mode or Expanded mode */}
+          {(isSideMode || expanded) && (
+            <motion.div
+              ref={panelRef}
+              key="panel-side"
+              initial={{ x: '100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '100%' }}
+              transition={transition}
+              style={{ width: panelWidth }}
+              className={cn(
+                'z-50 flex flex-col',
+                'bg-primary',
+                'shadow-xl shadow-black/20',
+                // Side mode positioning
+                !expanded && 'fixed inset-y-0 right-0 border-l border-panel/40',
+                // Expanded mode
+                expanded && 'fixed inset-0',
+                className
+              )}
+            >
+              {renderPanelInner()}
+            </motion.div>
+          )}
         </>
       )}
     </AnimatePresence>

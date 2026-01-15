@@ -89,11 +89,14 @@ interface TaskDetailsPanelProps {
   projectId: string;
   taskId: string;
   onClose: () => void;
+  /** Hide the internal header (for slide-over panel mode where header is provided externally) */
+  hideHeader?: boolean;
 }
 
 function TaskDetailsPanelContent({
   taskId: initialTaskId,
   onClose,
+  hideHeader = false,
 }: Omit<TaskDetailsPanelProps, 'projectId'>) {
   const { t } = useTranslation(['tasks', 'common']);
 
@@ -204,17 +207,19 @@ function TaskDetailsPanelContent({
   if (!selectedTask) {
     return (
       <div className="h-full flex flex-col">
-        <div className="shrink-0 flex items-center justify-between px-base py-half bg-secondary border-b border-panel">
-          <span className="text-sm text-normal font-medium">Task Details</span>
-          <button
-            type="button"
-            onClick={onClose}
-            className="p-half rounded hover:bg-panel text-low hover:text-normal transition-colors"
-            title="Close panel"
-          >
-            <XIcon className="size-icon-sm" />
-          </button>
-        </div>
+        {!hideHeader && (
+          <div className="shrink-0 flex items-center justify-between px-base py-half bg-secondary border-b border-panel">
+            <span className="text-sm text-normal font-medium">Task Details</span>
+            <button
+              type="button"
+              onClick={onClose}
+              className="p-half rounded hover:bg-panel text-low hover:text-normal transition-colors"
+              title="Close panel"
+            >
+              <XIcon className="size-icon-sm" />
+            </button>
+          </div>
+        )}
         <div className="flex-1 flex items-center justify-center text-low">
           Task not found
         </div>
@@ -350,10 +355,12 @@ function TaskDetailsPanelContent({
   // Simplified layout - no kanban, just task details
   const content = (
     <div className="h-full flex flex-col">
-      {/* Header */}
-      <div className="shrink-0 sticky top-0 z-20 bg-background border-b">
-        {rightHeader}
-      </div>
+      {/* Header - hidden when used in slide-over panel */}
+      {!hideHeader && (
+        <div className="shrink-0 sticky top-0 z-20 bg-background border-b">
+          {rightHeader}
+        </div>
+      )}
 
       {/* Content */}
       <div className="flex-1 min-h-0">
@@ -407,10 +414,15 @@ export function TaskDetailsPanel({
   projectId,
   taskId,
   onClose,
+  hideHeader = false,
 }: TaskDetailsPanelProps) {
   return (
     <ProjectProviderOverride projectId={projectId}>
-      <TaskDetailsPanelContent taskId={taskId} onClose={onClose} />
+      <TaskDetailsPanelContent
+        taskId={taskId}
+        onClose={onClose}
+        hideHeader={hideHeader}
+      />
     </ProjectProviderOverride>
   );
 }
