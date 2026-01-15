@@ -8,27 +8,13 @@ import {
   type DragEndEvent,
 } from '@dnd-kit/core';
 import { AnimatePresence, motion } from 'framer-motion';
-import {
-  KanbanIcon,
-  PlusIcon,
-  DotsThreeIcon,
-  CaretRightIcon,
-} from '@phosphor-icons/react';
+import { CaretRightIcon } from '@phosphor-icons/react';
 import { cn } from '@/lib/utils';
 import { useBoardTasksOverview } from '@/hooks/useBoardTasksOverview';
 import { useRegisterProjectCounts } from '@/hooks/useAggregateTaskCounts';
 import { SwimlaneTaskCard } from '@/components/ui-new/primitives/SwimlaneTaskCard';
+import { ProjectBoardHeader } from '@/components/ui-new/primitives/ProjectBoardHeader';
 import { ProjectProviderOverride } from '@/contexts/ProjectProviderOverride';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-  DropdownMenuSub,
-  DropdownMenuSubTrigger,
-  DropdownMenuSubContent,
-} from '@/components/ui/dropdown-menu';
 import type {
   Project,
   ProjectGroup,
@@ -223,20 +209,21 @@ export function ProjectSwimlane({
 
   if (error) {
     return (
-      <div className="grid grid-cols-[180px_repeat(5,minmax(120px,1fr))] border-b border-panel">
-        <div className="p-half">
-          <div className="flex items-center gap-half">
-            <KanbanIcon
-              weight="fill"
-              className="size-icon-xs text-brand shrink-0"
-            />
-            <span className="text-xs text-normal font-medium">
-              {project.name}
-            </span>
-          </div>
-        </div>
-        <div className="col-span-5 p-base text-sm text-error border-l border-panel">
-          Failed to load tasks
+      <div className="border-b border-panel/15">
+        {/* Project header */}
+        <ProjectBoardHeader
+          project={project}
+          taskCount={0}
+          isLoading={false}
+          groupId={groupId}
+          groups={groups}
+          onCreateTask={onCreateTask}
+          onMoveToGroup={onMoveToGroup}
+          onOpenBoard={onOpenBoard}
+        />
+        {/* Error state */}
+        <div className="px-4 py-3 text-sm text-error bg-error/5">
+          Failed to load tasks for this project
         </div>
       </div>
     );
@@ -246,178 +233,53 @@ export function ProjectSwimlane({
     <ProjectProviderOverride projectId={project.id}>
       <TooltipProvider>
         <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
-          <div
-            className={cn(
-              'group/row border-b border-panel/15',
-              'transition-all duration-150 ease-out'
-            )}
-          >
-            {/* Project header row - clickable to toggle collapse */}
-            <div
-              className={cn(
-                'grid grid-cols-[180px_repeat(5,minmax(120px,1fr))]',
-                'hover:bg-panel/8',
-                'transition-colors duration-150'
-              )}
-            >
-              {/* Project name cell */}
-              <div className="px-3 py-2 flex items-center">
-                <div className="flex items-center gap-2 flex-1 min-w-0">
-                  {/* Collapse toggle button */}
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <button
-                        type="button"
-                        onClick={() => setExpanded()}
-                        className={cn(
-                          'icon-btn p-0.5 rounded-sm shrink-0',
-                          'text-low/60 hover:text-normal',
-                          'hover:bg-panel/50',
-                          'transition-all duration-150',
-                          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/30'
-                        )}
-                      >
-                        <CaretRightIcon
-                          weight="bold"
-                          className={cn(
-                            'size-icon-xs transition-transform duration-150',
-                            isExpanded && 'rotate-90'
-                          )}
-                        />
-                      </button>
-                    </TooltipTrigger>
-                    <TooltipContent side="right" className="text-xs">
-                      {isExpanded ? 'Collapse project' : 'Expand project'}
-                    </TooltipContent>
-                  </Tooltip>
-
-                  <KanbanIcon
-                    weight="fill"
-                    className="size-icon-sm text-brand shrink-0"
-                  />
-                  <span className="text-xs text-normal font-medium truncate">
-                    {project.name}
-                  </span>
-                  <span
+          <div className="border-b border-panel/15">
+            {/* Project header with collapse toggle */}
+            <div className="flex items-center">
+              {/* Collapse toggle button */}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    type="button"
+                    onClick={() => setExpanded()}
                     className={cn(
-                      'text-[10px] tabular-nums shrink-0',
-                      'px-1.5 py-0.5 rounded-sm',
-                      'bg-panel/20 text-low/60'
+                      'p-2 shrink-0',
+                      'text-low/60 hover:text-normal',
+                      'hover:bg-panel/30',
+                      'transition-all duration-150',
+                      'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/30'
                     )}
                   >
-                    {isLoading ? '—' : filteredTotalCount}
-                  </span>
-
-                  {/* Actions - visible on row hover */}
-                  <div
-                    className={cn(
-                      'flex items-center gap-1 ml-auto shrink-0',
-                      'opacity-0 group-hover/row:opacity-100',
-                      'transition-opacity duration-150'
-                    )}
-                  >
-                    <button
-                      type="button"
-                      onClick={() => onCreateTask(project.id)}
+                    <CaretRightIcon
+                      weight="bold"
                       className={cn(
-                        'icon-btn p-1 rounded-md',
-                        'text-low hover:text-normal',
-                        'hover:bg-panel/50',
-                        'transition-all duration-150',
-                        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/30'
+                        'size-icon-xs transition-transform duration-150',
+                        isExpanded && 'rotate-90'
                       )}
-                      title="New task"
-                    >
-                      <PlusIcon className="size-icon-xs" />
-                    </button>
+                    />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="right" className="text-xs">
+                  {isExpanded ? 'Collapse project' : 'Expand project'}
+                </TooltipContent>
+              </Tooltip>
 
-                    {/* Actions dropdown */}
-                    {(onMoveToGroup || onOpenBoard) && (
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <button
-                            type="button"
-                            className={cn(
-                              'icon-btn p-1 rounded-md',
-                              'text-low hover:text-normal',
-                              'hover:bg-panel/50',
-                              'transition-all duration-150',
-                              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/30'
-                            )}
-                          >
-                            <DotsThreeIcon
-                              weight="bold"
-                              className="size-icon-xs"
-                            />
-                          </button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          {onOpenBoard && (
-                            <>
-                              <DropdownMenuItem
-                                onClick={() => onOpenBoard(project.id)}
-                              >
-                                Open board
-                              </DropdownMenuItem>
-                              {onMoveToGroup && <DropdownMenuSeparator />}
-                            </>
-                          )}
-                          {onMoveToGroup && (
-                            <DropdownMenuSub>
-                              <DropdownMenuSubTrigger>
-                                Move to group
-                              </DropdownMenuSubTrigger>
-                              <DropdownMenuSubContent>
-                                {groupId && (
-                                  <>
-                                    <DropdownMenuItem
-                                      onClick={() =>
-                                        onMoveToGroup(project.id, null)
-                                      }
-                                    >
-                                      Remove from group
-                                    </DropdownMenuItem>
-                                    <DropdownMenuSeparator />
-                                  </>
-                                )}
-                                {groups.map((group) => (
-                                  <DropdownMenuItem
-                                    key={group.id}
-                                    onClick={() =>
-                                      onMoveToGroup(project.id, group.id)
-                                    }
-                                    disabled={group.id === groupId}
-                                  >
-                                    {group.name}
-                                  </DropdownMenuItem>
-                                ))}
-                                {groups.length === 0 && (
-                                  <div className="px-2 py-1 text-sm text-low">
-                                    No groups
-                                  </div>
-                                )}
-                              </DropdownMenuSubContent>
-                            </DropdownMenuSub>
-                          )}
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    )}
-                  </div>
-                </div>
+              {/* Project board header - Linear-style */}
+              <div className="flex-1">
+                <ProjectBoardHeader
+                  project={project}
+                  taskCount={filteredTotalCount}
+                  isLoading={isLoading}
+                  groupId={groupId}
+                  groups={groups}
+                  onCreateTask={onCreateTask}
+                  onMoveToGroup={onMoveToGroup}
+                  onOpenBoard={onOpenBoard}
+                />
               </div>
-
-              {/* Empty status column cells when header is collapsed - maintain grid alignment */}
-              {!isExpanded &&
-                STATUS_ORDER.map((status) => (
-                  <div
-                    key={status}
-                    className="border-l border-panel/30 min-h-[40px]"
-                    style={{ backgroundColor: statusColumnBgColors[status] }}
-                  />
-                ))}
             </div>
 
-            {/* Status columns with tasks - animated expand/collapse */}
+            {/* Status columns grid - animated expand/collapse */}
             <AnimatePresence initial={false}>
               {isExpanded && (
                 <motion.div
@@ -427,9 +289,14 @@ export function ProjectSwimlane({
                   transition={{ duration: 0.15, ease: [0.4, 0, 0.2, 1] }}
                   className="overflow-hidden"
                 >
-                  <div className="grid grid-cols-[180px_repeat(5,minmax(120px,1fr))]">
-                    {/* Empty first column to maintain alignment */}
-                    <div />
+                  <div
+                    className={cn(
+                      'grid grid-cols-[180px_repeat(5,minmax(120px,1fr))]',
+                      'transition-all duration-150 ease-out'
+                    )}
+                  >
+                    {/* Empty spacer cell to align with the swimlane header */}
+                    <div className="px-3 py-2" />
 
                     {/* Status columns */}
                     {STATUS_ORDER.map((status) => {

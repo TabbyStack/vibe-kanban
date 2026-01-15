@@ -17,7 +17,7 @@ pub enum MergeStatus {
 }
 
 /// CI/GitHub Actions check status for a PR
-#[derive(Debug, Clone, Serialize, Deserialize, TS, Type, PartialEq, Default)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, TS, Type, PartialEq, Default)]
 #[sqlx(type_name = "ci_status", rename_all = "snake_case")]
 #[serde(rename_all = "snake_case")]
 pub enum CiStatus {
