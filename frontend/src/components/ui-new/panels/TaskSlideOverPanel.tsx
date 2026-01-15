@@ -29,7 +29,6 @@ export function TaskSlideOverPanel({
       onOpenChange={onOpenChange}
       expanded={expanded}
       onExpandedChange={setExpanded}
-      width={expanded ? 'xl' : 'lg'}
     >
       <TaskDetailsPanel
         projectId={projectId}

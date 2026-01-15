@@ -68,7 +68,6 @@ export function WorkspaceSlideOverPanel({
       onOpenChange={onOpenChange}
       expanded={expanded}
       onExpandedChange={setExpanded}
-      width={expanded ? 'xl' : 'lg'}
       title={
         <div className="flex items-center gap-2">
           <span className="truncate">{workspace?.name || 'Workspace'}</span>

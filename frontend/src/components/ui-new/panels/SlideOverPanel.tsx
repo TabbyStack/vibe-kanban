@@ -9,22 +9,17 @@ import {
 
 import { cn } from '@/lib/utils';
 import { useKeyExit, useKeyToggleExpand, Scope } from '@/keyboard';
+import { usePaneSize, PERSIST_KEYS } from '@/stores/useUiPreferencesStore';
 
-const PANEL_WIDTHS = {
-  sm: 360,
-  md: 420,
-  lg: 480,
-  xl: 600,
-} as const;
-
-export type SlideOverWidth = keyof typeof PANEL_WIDTHS;
+const MIN_WIDTH = 360;
+const MAX_WIDTH = 900;
+const DEFAULT_WIDTH = 480;
 
 export interface SlideOverPanelProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   expanded?: boolean;
   onExpandedChange?: (expanded: boolean) => void;
-  width?: SlideOverWidth;
   title?: React.ReactNode;
   children: React.ReactNode;
   className?: string;
@@ -40,13 +35,25 @@ export function SlideOverPanel({
   onOpenChange,
   expanded = false,
   onExpandedChange,
-  width = 'lg',
   title,
   children,
   className,
 }: SlideOverPanelProps) {
   const { enableScope, disableScope } = useHotkeysContext();
   const panelRef = React.useRef<HTMLDivElement>(null);
+  const [isResizing, setIsResizing] = React.useState(false);
+
+  // Persist panel width
+  const [persistedWidth, setPersistedWidth] = usePaneSize(
+    PERSIST_KEYS.slideOverPanelWidth,
+    DEFAULT_WIDTH
+  );
+  const [width, setWidth] = React.useState(Number(persistedWidth));
+
+  // Sync with persisted value on mount
+  React.useEffect(() => {
+    setWidth(Number(persistedWidth));
+  }, [persistedWidth]);
 
   // Manage keyboard scope when open/closed
   React.useEffect(() => {
@@ -126,7 +133,45 @@ export function SlideOverPanel({
     }
   }, [expanded, onOpenChange]);
 
-  const panelWidth = expanded ? '100%' : `${PANEL_WIDTHS[width]}px`;
+  // Resize handling
+  const handleResizeStart = React.useCallback(
+    (e: React.MouseEvent) => {
+      e.preventDefault();
+      setIsResizing(true);
+
+      const startX = e.clientX;
+      const startWidth = width;
+
+      const handleMouseMove = (moveEvent: MouseEvent) => {
+        const deltaX = startX - moveEvent.clientX;
+        const newWidth = Math.min(
+          MAX_WIDTH,
+          Math.max(MIN_WIDTH, startWidth + deltaX)
+        );
+        setWidth(newWidth);
+      };
+
+      const handleMouseUp = () => {
+        setIsResizing(false);
+        setPersistedWidth(width);
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', handleMouseUp);
+      };
+
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+    },
+    [width, setPersistedWidth]
+  );
+
+  // Save width on resize end
+  React.useEffect(() => {
+    if (!isResizing && width !== Number(persistedWidth)) {
+      setPersistedWidth(width);
+    }
+  }, [isResizing, width, persistedWidth, setPersistedWidth]);
+
+  const panelWidth = expanded ? '100%' : `${width}px`;
 
   const content = (
     <AnimatePresence mode="wait">
@@ -163,6 +208,18 @@ export function SlideOverPanel({
               className
             )}
           >
+            {/* Resize handle */}
+            {!expanded && (
+              <div
+                onMouseDown={handleResizeStart}
+                className={cn(
+                  'absolute left-0 top-0 bottom-0 w-1 cursor-ew-resize',
+                  'hover:bg-brand/50 transition-colors',
+                  isResizing && 'bg-brand'
+                )}
+              />
+            )}
+
             {/* Header */}
             <div className="flex items-center justify-between px-4 py-3 border-b border-panel/40">
               <div className="flex-1 min-w-0">

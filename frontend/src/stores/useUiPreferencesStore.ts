@@ -38,6 +38,7 @@ export const PERSIST_KEYS = {
   gitPanelWidth: 'workspaces-git-panel-width',
   changesPanelWidth: 'workspaces-changes-panel-width',
   fileTreeHeight: 'workspaces-file-tree-height',
+  slideOverPanelWidth: 'slide-over-panel-width',
   // Dynamic keys (use helper functions)
   repoCard: (repoId: string) => `repo-card-${repoId}` as const,
 } as const;
@@ -58,6 +59,7 @@ export type PersistKey =
   | typeof PERSIST_KEYS.gitPanelWidth
   | typeof PERSIST_KEYS.changesPanelWidth
   | typeof PERSIST_KEYS.fileTreeHeight
+  | typeof PERSIST_KEYS.slideOverPanelWidth
   | `repo-card-${string}`
   | `diff:${string}`
   | `edit:${string}`
