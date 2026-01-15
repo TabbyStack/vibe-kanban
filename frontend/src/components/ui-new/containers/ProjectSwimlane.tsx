@@ -13,6 +13,7 @@ import { cn } from '@/lib/utils';
 import { useBoardTasksOverview } from '@/hooks/useBoardTasksOverview';
 import { useRegisterProjectCounts } from '@/hooks/useAggregateTaskCounts';
 import { SwimlaneTaskCard } from '@/components/ui-new/primitives/SwimlaneTaskCard';
+import { ProjectHealthIndicator } from '@/components/ui-new/primitives/ProjectHealthIndicator';
 import { ProjectBoardHeader } from '@/components/ui-new/primitives/ProjectBoardHeader';
 import { ProjectProviderOverride } from '@/contexts/ProjectProviderOverride';
 import type {
@@ -265,7 +266,7 @@ export function ProjectSwimlane({
               </Tooltip>
 
               {/* Project board header - Linear-style */}
-              <div className="flex-1">
+              <div className="flex-1 flex items-center gap-2">
                 <ProjectBoardHeader
                   project={project}
                   taskCount={filteredTotalCount}
@@ -276,6 +277,9 @@ export function ProjectSwimlane({
                   onMoveToGroup={onMoveToGroup}
                   onOpenBoard={onOpenBoard}
                 />
+                {!isLoading && (
+                  <ProjectHealthIndicator tasksByStatus={tasksByStatus} />
+                )}
               </div>
             </div>
 
