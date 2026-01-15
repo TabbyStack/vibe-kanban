@@ -192,7 +192,11 @@ export function SlideOverPanel({
 
   // Determine panel dimensions based on mode
   const isSideMode = currentPeekMode === 'side';
-  const panelWidth = expanded ? '100%' : isSideMode ? `${width}px` : `${CENTER_WIDTH_PERCENT}vw`;
+  const panelWidth = expanded
+    ? '100%'
+    : isSideMode
+      ? `${width}px`
+      : `${CENTER_WIDTH_PERCENT}vw`;
 
   // Render the panel header and content (shared between modes)
   const renderPanelInner = () => (

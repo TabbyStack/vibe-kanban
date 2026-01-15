@@ -26,7 +26,7 @@ export function useAutoLinkSharedTasks({
   projectId,
 }: UseAutoLinkSharedTasksProps): void {
   const { data: currentUser } = useCurrentUser();
-  const { linkSharedTaskToLocal } = useTaskMutations(projectId);
+  const { linkSharedTaskToLocal } = useTaskMutations();
   const linkingInProgress = useRef<Set<string>>(new Set());
   const failedTasks = useRef<Set<string>>(new Set());
 

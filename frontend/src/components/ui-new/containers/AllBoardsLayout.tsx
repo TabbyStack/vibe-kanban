@@ -139,16 +139,13 @@ export function AllBoardsLayout() {
     setSelectedTaskId(null);
   }, []);
 
-  const handleOpenBoard = useCallback(
-    (projectId: string) => {
-      // Filter to show only this project instead of navigating to legacy route
-      setFilterState((prev) => ({
-        ...prev,
-        selectedProjectId: projectId,
-      }));
-    },
-    []
-  );
+  const handleOpenBoard = useCallback((projectId: string) => {
+    // Filter to show only this project instead of navigating to legacy route
+    setFilterState((prev) => ({
+      ...prev,
+      selectedProjectId: projectId,
+    }));
+  }, []);
 
   // Sidebar action handlers
   const handleSidebarCreateTask = useCallback(() => {

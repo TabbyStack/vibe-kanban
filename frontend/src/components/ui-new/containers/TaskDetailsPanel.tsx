@@ -209,7 +209,9 @@ function TaskDetailsPanelContent({
       <div className="h-full flex flex-col">
         {!hideHeader && (
           <div className="shrink-0 flex items-center justify-between px-base py-half bg-secondary border-b border-panel">
-            <span className="text-sm text-normal font-medium">Task Details</span>
+            <span className="text-sm text-normal font-medium">
+              Task Details
+            </span>
             <button
               type="button"
               onClick={onClose}

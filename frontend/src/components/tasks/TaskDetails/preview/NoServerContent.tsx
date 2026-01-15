@@ -38,7 +38,7 @@ export function NoServerContent({
   const navigate = useNavigate();
   const { config } = useUserSystem();
 
-  const { createAndStart } = useTaskMutations(project?.id);
+  const { createAndStart } = useTaskMutations();
   const { data: projectRepos = [] } = useProjectRepos(project?.id);
 
   const handleConfigureDevScript = () => {

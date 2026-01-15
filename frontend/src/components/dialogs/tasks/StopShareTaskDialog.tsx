@@ -14,7 +14,6 @@ import { defineModal } from '@/lib/modals';
 import { useTranslation } from 'react-i18next';
 import type { SharedTaskRecord } from '@/hooks/useProjectTasks';
 import { useTaskMutations } from '@/hooks/useTaskMutations';
-import { useProject } from '@/contexts/ProjectContext';
 
 export interface StopShareTaskDialogProps {
   sharedTask: SharedTaskRecord;
@@ -24,8 +23,7 @@ const StopShareTaskDialogImpl = NiceModal.create<StopShareTaskDialogProps>(
   ({ sharedTask }) => {
     const modal = useModal();
     const { t } = useTranslation('tasks');
-    const { projectId } = useProject();
-    const { stopShareTask } = useTaskMutations(projectId ?? undefined);
+    const { stopShareTask } = useTaskMutations();
     const [error, setError] = useState<string | null>(null);
     const isProgrammaticCloseRef = useRef(false);
     const didConfirmRef = useRef(false);
