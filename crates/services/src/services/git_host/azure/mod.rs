@@ -14,7 +14,7 @@ use tracing::info;
 
 use super::{
     GitHostProvider,
-    types::{CreatePrRequest, GitHostError, ProviderKind, UnifiedPrComment},
+    types::{CiFailureInfo, CreatePrRequest, GitHostError, ProviderKind, UnifiedPrComment},
 };
 
 #[derive(Debug, Clone)]
@@ -187,6 +187,12 @@ impl GitHostProvider for AzureDevOpsProvider {
         // Azure DevOps CI status integration is not yet implemented
         // Return Unknown for now - future work could fetch Azure Pipelines status
         Ok(CiStatus::Unknown)
+    }
+
+    async fn get_ci_failures(&self, _pr_url: &str) -> Result<Vec<CiFailureInfo>, GitHostError> {
+        // Azure DevOps CI failure details not yet implemented
+        // Return empty for now - future work could fetch Azure Pipelines failure details
+        Ok(Vec::new())
     }
 
     async fn list_prs_for_branch(
