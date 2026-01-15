@@ -235,8 +235,8 @@ export function ProjectSwimlane({
       <TooltipProvider>
         <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
           <div className="border-b border-panel/15">
-            {/* Project header with collapse toggle */}
-            <div className="flex items-center">
+            {/* Project header with collapse toggle - sticky on horizontal scroll */}
+            <div className="flex items-center sticky left-0 z-10 bg-primary">
               {/* Collapse toggle button */}
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -287,45 +287,51 @@ export function ProjectSwimlane({
             <AnimatePresence initial={false}>
               {isExpanded && (
                 <motion.div
-                  initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: 'auto', opacity: 1 }}
-                  exit={{ height: 0, opacity: 0 }}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
                   transition={{ duration: 0.15, ease: [0.4, 0, 0.2, 1] }}
-                  className="overflow-hidden"
                 >
                   <div
                     className={cn(
-                      'grid grid-cols-[180px_repeat(5,minmax(120px,1fr))]',
+                      'flex min-w-[880px]',
                       'transition-all duration-150 ease-out'
                     )}
                   >
-                    {/* Empty spacer cell to align with the swimlane header */}
-                    <div className="px-3 py-2" />
+                    {/* Empty spacer cell to align with the swimlane header - sticky */}
+                    <div className="w-[180px] shrink-0 px-3 py-2 sticky left-0 z-10 bg-primary" />
 
-                    {/* Status columns */}
-                    {STATUS_ORDER.map((status) => {
-                      const tasks = filteredTasksByStatus[status];
+                    {/* Status columns - grid for equal widths */}
+                    <div
+                      className="grid grid-cols-5 flex-1"
+                      style={{ minWidth: '700px' }}
+                    >
+                      {STATUS_ORDER.map((status) => {
+                        const tasks = filteredTasksByStatus[status];
 
-                      return (
-                        <StatusCell key={status} status={status}>
-                          {isLoading ? (
-                            <div className="flex flex-col gap-1.5">
-                              <div className="skeleton h-12 w-full rounded-md" />
-                            </div>
-                          ) : tasks.length === 0 ? null : (
-                            tasks.map((task) => (
-                              <SwimlaneTaskCard
-                                key={task.id}
-                                task={task}
-                                projectId={project.id}
-                                isSelected={selectedTaskId === task.id}
-                                onClick={() => onTaskClick(project.id, task.id)}
-                              />
-                            ))
-                          )}
-                        </StatusCell>
-                      );
-                    })}
+                        return (
+                          <StatusCell key={status} status={status}>
+                            {isLoading ? (
+                              <div className="flex flex-col gap-1.5">
+                                <div className="skeleton h-12 w-full rounded-md" />
+                              </div>
+                            ) : tasks.length === 0 ? null : (
+                              tasks.map((task) => (
+                                <SwimlaneTaskCard
+                                  key={task.id}
+                                  task={task}
+                                  projectId={project.id}
+                                  isSelected={selectedTaskId === task.id}
+                                  onClick={() =>
+                                    onTaskClick(project.id, task.id)
+                                  }
+                                />
+                              ))
+                            )}
+                          </StatusCell>
+                        );
+                      })}
+                    </div>
                   </div>
                 </motion.div>
               )}

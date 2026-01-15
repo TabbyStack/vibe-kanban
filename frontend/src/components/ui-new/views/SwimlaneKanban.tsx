@@ -310,7 +310,7 @@ function SwimlaneKanbanContent({
   );
 
   return (
-    <div className="h-full flex-1 overflow-y-auto bg-primary">
+    <div className="h-full flex-1 overflow-auto bg-primary">
       {/* Header with search and controls */}
       <div
         className={cn(
@@ -443,16 +443,21 @@ function SwimlaneKanbanContent({
       <div
         className={cn(
           'sticky top-[44px] z-10',
-          'grid grid-cols-[180px_repeat(5,minmax(120px,1fr))]',
+          'flex',
+          'min-w-[880px]',
           'bg-primary/98 backdrop-blur-sm',
           'border-b border-panel/30',
           'shadow-sm shadow-black/[0.02]'
         )}
       >
-        <div className="py-2 px-3" />
-        {STATUS_ORDER.map((status) => (
-          <StatusHeader key={status} status={status} />
-        ))}
+        {/* Empty first cell - sticky on horizontal scroll to align with project names */}
+        <div className="w-[180px] shrink-0 py-2 px-3 sticky left-0 z-10 bg-primary" />
+        {/* Status column headers */}
+        <div className="grid grid-cols-5 flex-1" style={{ minWidth: '700px' }}>
+          {STATUS_ORDER.map((status) => (
+            <StatusHeader key={status} status={status} />
+          ))}
+        </div>
       </div>
 
       {/* Groups and swimlanes */}
@@ -559,11 +564,10 @@ function SwimlaneKanbanContent({
                 <AnimatePresence initial={false}>
                   {isGroupExpanded && (
                     <motion.div
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: 'auto', opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
                       transition={{ duration: 0.15, ease: [0.4, 0, 0.2, 1] }}
-                      className="overflow-hidden"
                     >
                       {/* Project rows */}
                       {projects.length === 0 ? (
