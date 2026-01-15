@@ -32,7 +32,7 @@ const ShareDialogImpl = NiceModal.create<ShareDialogProps>(({ task }) => {
   const { loading: systemLoading } = useUserSystem();
   const { isSignedIn } = useAuth();
   const { project } = useProject();
-  const { shareTask } = useTaskMutations(task.project_id);
+  const { shareTask } = useTaskMutations();
   const { reset: resetShareTask } = shareTask;
 
   const [shareError, setShareError] = useState<string | null>(null);

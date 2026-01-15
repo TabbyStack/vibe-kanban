@@ -100,10 +100,7 @@ const TaskFormDialogImpl = NiceModal.create<TaskFormDialogProps>((props) => {
   // Get all projects for the selector (only used when no projectId provided)
   const { projects: allProjects, isLoading: projectsLoading } = useProjects();
 
-  // These hooks need a projectId - pass empty string when none selected (they're disabled anyway)
-  const effectiveProjectId = projectId ?? '';
-  const { createTask, createAndStart, updateTask } =
-    useTaskMutations(effectiveProjectId);
+  const { createTask, createAndStart, updateTask } = useTaskMutations();
   const { system, profiles, loading: userSystemLoading } = useUserSystem();
   const { upload, uploadForTask } = useImageUpload();
   const { enableScope, disableScope } = useHotkeysContext();
@@ -119,7 +116,7 @@ const TaskFormDialogImpl = NiceModal.create<TaskFormDialogProps>((props) => {
   const { data: taskImages } = useTaskImages(
     editMode ? props.task.id : undefined
   );
-  const { data: projectRepos = [] } = useProjectRepos(effectiveProjectId, {
+  const { data: projectRepos = [] } = useProjectRepos(projectId ?? '', {
     enabled: modal.visible && !!projectId,
   });
   const initialBranch =

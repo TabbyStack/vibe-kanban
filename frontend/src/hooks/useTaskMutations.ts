@@ -12,7 +12,7 @@ import type {
 } from 'shared/types';
 import { taskKeys } from './useTask';
 
-export function useTaskMutations(_projectId?: string) {
+export function useTaskMutations() {
   const queryClient = useQueryClient();
 
   const invalidateQueries = (taskId?: string) => {
