@@ -133,7 +133,9 @@ export function ProjectBoardHeader({
                 'group-hover/header:bg-panel/40 group-hover/header:text-low'
               )}
             >
-              {isLoading ? '...' : `${taskCount} task${taskCount !== 1 ? 's' : ''}`}
+              {isLoading
+                ? '...'
+                : `${taskCount} task${taskCount !== 1 ? 's' : ''}`}
             </span>
           </div>
           {/* Optional: Task prefix display */}
@@ -269,4 +271,3 @@ export function ProjectBoardHeader({
     </TooltipProvider>
   );
 }
-
