@@ -61,9 +61,11 @@ export function TaskSlideOverPanel({
   }, [onOpenChange]);
 
   const handleOpenFullPage = useCallback(() => {
-    navigate(`/projects/${projectId}/tasks/${taskId}`);
+    if (attemptId) {
+      navigate(`/workspaces/${attemptId}`);
+    }
     handleClose();
-  }, [navigate, projectId, taskId, handleClose]);
+  }, [navigate, attemptId, handleClose]);
 
   // Build title with context breadcrumb
   const title = (
