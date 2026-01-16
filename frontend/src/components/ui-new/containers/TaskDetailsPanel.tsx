@@ -24,7 +24,6 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import type { LayoutMode } from '@/components/layout/TasksLayout';
 import { PreviewPanel } from '@/components/panels/PreviewPanel';
 import { DiffsPanel } from '@/components/panels/DiffsPanel';
-import TaskAttemptPanel from '@/components/panels/TaskAttemptPanel';
 import TaskPanel from '@/components/panels/TaskPanel';
 import TodoPanel from '@/components/tasks/TodoPanel';
 import { StickyNextActionCard } from '@/components/tasks/StickyNextActionCard';
@@ -39,6 +38,13 @@ import {
 } from '@/components/ui/breadcrumb';
 import { AttemptHeaderActions } from '@/components/panels/AttemptHeaderActions';
 import { TaskPanelHeaderActions } from '@/components/panels/TaskPanelHeaderActions';
+
+// Unified chat components
+import {
+  ChatContextProvider,
+  ChatConversationList,
+} from '@/components/chat';
+import { SessionChatBoxContainer } from '@/components/ui-new/containers/SessionChatBoxContainer';
 
 import type { TaskWithAttemptStatus } from 'shared/types';
 
@@ -319,42 +325,54 @@ function TaskDetailsPanelContent({
           onAttemptCreated={handleAttemptCreated}
           onAttemptClick={setSelectedAttemptId}
         />
-      ) : (
-        <TaskAttemptPanel attempt={attempt} task={selectedTask}>
-          {({ logs, followUp }) => (
-            <>
-              <GitErrorBanner />
-              <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
-                {/* Logs container - fixed height for testing scroll */}
-                <div className="h-[400px] overflow-hidden">
-                  <div className="h-full w-full">
-                    {logs}
-                  </div>
-                </div>
-
-                {/* Summary & Actions - sticky above TodoPanel */}
-                <div className="shrink-0 border-t">
-                  <div className="mx-auto w-full max-w-[50rem]">
-                    <StickyNextActionCard attempt={attempt} task={selectedTask} />
-                  </div>
-                </div>
-
-                {/* Todos section */}
-                <div className="shrink-0 border-t">
-                  <div className="mx-auto w-full max-w-[50rem]">
-                    <TodoPanel />
-                  </div>
-                </div>
-
-                <div className="min-h-0 max-h-[50%] border-t overflow-hidden bg-background">
-                  <div className="mx-auto w-full max-w-[50rem] h-full min-h-0">
-                    {followUp}
-                  </div>
-                </div>
+      ) : attempt ? (
+        <ChatContextProvider
+          attemptId={attempt.id}
+          sessionId={attempt.session?.id}
+        >
+          <GitErrorBanner />
+          <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
+            {/* Logs container - fixed height for testing scroll */}
+            <div className="h-[400px] overflow-hidden">
+              <div className="h-full w-full relative">
+                <ChatConversationList
+                  attempt={attempt}
+                  task={selectedTask}
+                  className="h-full w-full scrollbar-none"
+                />
               </div>
-            </>
-          )}
-        </TaskAttemptPanel>
+            </div>
+
+            {/* Summary & Actions - sticky above TodoPanel */}
+            <div className="shrink-0 border-t">
+              <div className="mx-auto w-full max-w-[50rem]">
+                <StickyNextActionCard attempt={attempt} task={selectedTask} />
+              </div>
+            </div>
+
+            {/* Todos section */}
+            <div className="shrink-0 border-t">
+              <div className="mx-auto w-full max-w-[50rem]">
+                <TodoPanel />
+              </div>
+            </div>
+
+            {/* Chat input - compact variant for slide-over */}
+            <div className="min-h-0 max-h-[50%] border-t overflow-hidden bg-background">
+              <div className="mx-auto w-full max-w-[50rem] h-full min-h-0">
+                <SessionChatBoxContainer
+                  session={attempt.session}
+                  taskId={selectedTask.id}
+                  workspaceId={attempt.id}
+                  projectId={projectId}
+                  variant="compact"
+                />
+              </div>
+            </div>
+          </div>
+        </ChatContextProvider>
+      ) : (
+        <div className="p-6 text-muted-foreground">Loading attempt...</div>
       )}
     </NewCard>
   );

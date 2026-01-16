@@ -48,6 +48,9 @@ function computeExecutionStatus(params: {
   return 'idle';
 }
 
+/** Visual variant for the chat box */
+export type ChatBoxVariant = 'full' | 'compact';
+
 interface SessionChatBoxContainerProps {
   /** The current session */
   session?: Session;
@@ -73,6 +76,11 @@ interface SessionChatBoxContainerProps {
   onStartNewSession?: () => void;
   /** Workspace ID for creating new sessions */
   workspaceId?: string;
+  /**
+   * Visual variant: 'full' (default) shows all features including session switching,
+   * 'compact' hides session switching for slide-over panels
+   */
+  variant?: ChatBoxVariant;
 }
 
 export function SessionChatBoxContainer({
@@ -88,7 +96,10 @@ export function SessionChatBoxContainer({
   isNewSessionMode = false,
   onStartNewSession,
   workspaceId: propWorkspaceId,
+  variant = 'full',
 }: SessionChatBoxContainerProps) {
+  // In compact mode, disable session switching features
+  const isCompact = variant === 'compact';
   const workspaceId = propWorkspaceId ?? session?.workspace_id;
   const sessionId = session?.id;
   const queryClient = useQueryClient();
@@ -545,11 +556,12 @@ export function SessionChatBoxContainer({
         onChange: setSelectedVariant,
       }}
       session={{
-        sessions,
+        // In compact mode, hide session switching entirely
+        sessions: isCompact ? [] : sessions,
         selectedSessionId: sessionId,
-        onSelectSession: onSelectSession ?? (() => {}),
-        isNewSessionMode,
-        onNewSession: onStartNewSession,
+        onSelectSession: isCompact ? () => {} : (onSelectSession ?? (() => {})),
+        isNewSessionMode: isCompact ? false : isNewSessionMode,
+        onNewSession: isCompact ? undefined : onStartNewSession,
       }}
       stats={{
         filesChanged,
@@ -563,7 +575,8 @@ export function SessionChatBoxContainer({
       agent={latestProfileId?.executor}
       inProgressTodo={inProgressTodo}
       executor={
-        isNewSessionMode
+        // Executor selection only in full mode with new session
+        isNewSessionMode && !isCompact
           ? {
               selected: effectiveExecutor,
               options: executorOptions,

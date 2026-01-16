@@ -7,22 +7,27 @@ import {
   VirtuosoMessageListProps,
 } from '@virtuoso.dev/message-list';
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { SpinnerGapIcon } from '@phosphor-icons/react';
 
-import NewDisplayConversationEntry from '../ui-new/NewDisplayConversationEntry';
+import NewDisplayConversationEntry from '@/components/ui-new/NewDisplayConversationEntry';
+import { ApprovalFormProvider } from '@/contexts/ApprovalFormContext';
 import { useEntries } from '@/contexts/EntriesContext';
 import {
   AddEntryType,
   PatchTypeWithKey,
   useConversationHistory,
 } from '@/hooks/useConversationHistory';
-import { Loader2 } from 'lucide-react';
-import { TaskWithAttemptStatus } from 'shared/types';
+import type { TaskWithAttemptStatus } from 'shared/types';
 import type { WorkspaceWithSession } from '@/types/attempt';
-import { ApprovalFormProvider } from '@/contexts/ApprovalFormContext';
 
-interface VirtualizedListProps {
+export interface ChatConversationListProps {
+  /** The workspace/attempt to display conversation for */
   attempt: WorkspaceWithSession;
+  /** Optional task context for the conversation */
   task?: TaskWithAttemptStatus;
+  /** Optional class name for custom styling */
+  className?: string;
 }
 
 interface MessageListContext {
@@ -41,6 +46,14 @@ const InitialDataScrollModifier: ScrollModifier = {
 const AutoScrollToBottom: ScrollModifier = {
   type: 'auto-scroll-to-bottom',
   autoScroll: 'smooth',
+};
+
+const ScrollToTopOfLastItem: ScrollModifier = {
+  type: 'item-location',
+  location: {
+    index: 'LAST',
+    align: 'start',
+  },
 };
 
 const ItemContent: VirtuosoMessageListProps<
@@ -74,37 +87,86 @@ const ItemContent: VirtuosoMessageListProps<
 const computeItemKey: VirtuosoMessageListProps<
   PatchTypeWithKey,
   MessageListContext
->['computeItemKey'] = ({ data }) => `l-${data.patchKey}`;
+>['computeItemKey'] = ({ data }) => `chat-${data.patchKey}`;
 
-const VirtualizedList = ({ attempt, task }: VirtualizedListProps) => {
+/**
+ * Unified chat conversation list component used across both
+ * slide-over panel and full-screen workspace views.
+ *
+ * Features:
+ * - Debounced updates for smooth scrolling
+ * - i18n support for loading states
+ * - Smart scroll behavior (auto-scroll for running, top-of-last for plan)
+ */
+export function ChatConversationList({
+  attempt,
+  task,
+  className,
+}: ChatConversationListProps) {
+  const { t } = useTranslation('common');
   const [channelData, setChannelData] =
     useState<DataWithScrollModifier<PatchTypeWithKey> | null>(null);
   const [loading, setLoading] = useState(true);
   const { setEntries, reset } = useEntries();
+  const pendingUpdateRef = useRef<{
+    entries: PatchTypeWithKey[];
+    addType: AddEntryType;
+    loading: boolean;
+  } | null>(null);
+  const debounceTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Reset state when attempt changes
   useEffect(() => {
     setLoading(true);
     setChannelData(null);
     reset();
   }, [attempt.id, reset]);
 
+  // Cleanup debounce timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (debounceTimeoutRef.current) {
+        clearTimeout(debounceTimeoutRef.current);
+      }
+    };
+  }, []);
+
   const onEntriesUpdated = (
     newEntries: PatchTypeWithKey[],
     addType: AddEntryType,
     newLoading: boolean
   ) => {
-    let scrollModifier: ScrollModifier = InitialDataScrollModifier;
+    pendingUpdateRef.current = {
+      entries: newEntries,
+      addType,
+      loading: newLoading,
+    };
 
-    if ((addType === 'running' || addType === 'plan') && !loading) {
-      scrollModifier = AutoScrollToBottom;
+    if (debounceTimeoutRef.current) {
+      clearTimeout(debounceTimeoutRef.current);
     }
 
-    setChannelData({ data: newEntries, scrollModifier });
-    setEntries(newEntries);
+    // Debounce updates to prevent rapid re-renders during streaming
+    debounceTimeoutRef.current = setTimeout(() => {
+      const pending = pendingUpdateRef.current;
+      if (!pending) return;
 
-    if (loading) {
-      setLoading(newLoading);
-    }
+      let scrollModifier: ScrollModifier = InitialDataScrollModifier;
+
+      // Use different scroll behavior based on update type
+      if (pending.addType === 'plan' && !loading) {
+        scrollModifier = ScrollToTopOfLastItem;
+      } else if (pending.addType === 'running' && !loading) {
+        scrollModifier = AutoScrollToBottom;
+      }
+
+      setChannelData({ data: pending.entries, scrollModifier });
+      setEntries(pending.entries);
+
+      if (loading) {
+        setLoading(pending.loading);
+      }
+    }, 100);
   };
 
   useConversationHistory({ attempt, onEntriesUpdated });
@@ -122,7 +184,7 @@ const VirtualizedList = ({ attempt, task }: VirtualizedListProps) => {
       >
         <VirtuosoMessageList<PatchTypeWithKey, MessageListContext>
           ref={messageListRef}
-          style={{ height: '100%', width: '100%' }}
+          className={className ?? 'h-full scrollbar-none'}
           data={channelData}
           initialLocation={INITIAL_TOP_ITEM}
           context={messageListContext}
@@ -133,13 +195,13 @@ const VirtualizedList = ({ attempt, task }: VirtualizedListProps) => {
         />
       </VirtuosoMessageListLicense>
       {loading && !channelData?.data?.length && (
-        <div className="absolute inset-0 bg-primary flex flex-col gap-2 justify-center items-center z-10">
-          <Loader2 className="h-8 w-8 animate-spin" />
-          <p>Loading History</p>
+        <div className="absolute inset-0 bg-primary flex flex-col gap-2 justify-center items-center">
+          <SpinnerGapIcon className="h-8 w-8 animate-spin" />
+          <p>{t('states.loadingHistory')}</p>
         </div>
       )}
     </ApprovalFormProvider>
   );
-};
+}
 
-export default VirtualizedList;
+export default ChatConversationList;

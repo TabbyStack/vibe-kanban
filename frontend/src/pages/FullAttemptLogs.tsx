@@ -4,12 +4,16 @@ import '@/vscode/bridge';
 import { useParams } from 'react-router-dom';
 import { AppWithStyleOverride } from '@/utils/StyleOverride';
 import { WebviewContextMenu } from '@/vscode/ContextMenu';
-import TaskAttemptPanel from '@/components/panels/TaskAttemptPanel';
 import { useTaskAttemptWithSession } from '@/hooks/useTaskAttempt';
 import { useProjectTasks } from '@/hooks/useProjectTasks';
 import { ExecutionProcessesProvider } from '@/contexts/ExecutionProcessesContext';
 import { ReviewProvider } from '@/contexts/ReviewProvider';
 import { ClickedElementsProvider } from '@/contexts/ClickedElementsProvider';
+import {
+  ChatContextProvider,
+  ChatConversationList,
+} from '@/components/chat';
+import { SessionChatBoxContainer } from '@/components/ui-new/containers/SessionChatBoxContainer';
 
 export function FullAttemptLogsPage() {
   const {
@@ -40,36 +44,38 @@ export function FullAttemptLogsPage() {
                   attemptId={attempt.id}
                   sessionId={attempt.session?.id}
                 >
-                  <TaskAttemptPanel attempt={attempt} task={task}>
-                    {({ logs, followUp }) => (
-                      <div className="h-full min-h-0 flex flex-col">
-                        <div className="flex-1 min-h-0 flex flex-col">
-                          {logs}
-                        </div>
-                        <div className="min-h-0 max-h-[50%] border-t overflow-hidden">
-                          <div className="mx-auto w-full max-w-[50rem] h-full min-h-0">
-                            {followUp}
-                          </div>
+                  <ChatContextProvider
+                    attemptId={attempt.id}
+                    sessionId={attempt.session?.id}
+                  >
+                    <div className="h-full min-h-0 flex flex-col">
+                      <div className="flex-1 min-h-0 flex flex-col relative">
+                        <ChatConversationList
+                          attempt={attempt}
+                          task={task ?? undefined}
+                          className="h-full scrollbar-none"
+                        />
+                      </div>
+                      <div className="min-h-0 max-h-[50%] border-t overflow-hidden">
+                        <div className="mx-auto w-full max-w-[50rem] h-full min-h-0">
+                          <SessionChatBoxContainer
+                            session={attempt.session}
+                            taskId={task?.id}
+                            workspaceId={attempt.id}
+                            projectId={projectId}
+                            variant="compact"
+                          />
                         </div>
                       </div>
-                    )}
-                  </TaskAttemptPanel>
+                    </div>
+                  </ChatContextProvider>
                 </ExecutionProcessesProvider>
               </ReviewProvider>
             </ClickedElementsProvider>
           ) : (
-            <TaskAttemptPanel attempt={attempt} task={task}>
-              {({ logs, followUp }) => (
-                <div className="h-full min-h-0 flex flex-col">
-                  <div className="flex-1 min-h-0 flex flex-col">{logs}</div>
-                  <div className="min-h-0 max-h-[50%] border-t overflow-hidden">
-                    <div className="mx-auto w-full max-w-[50rem] h-full min-h-0">
-                      {followUp}
-                    </div>
-                  </div>
-                </div>
-              )}
-            </TaskAttemptPanel>
+            <div className="h-full min-h-0 flex items-center justify-center">
+              <p className="text-muted-foreground">Loading attempt...</p>
+            </div>
           )}
         </main>
       </div>
