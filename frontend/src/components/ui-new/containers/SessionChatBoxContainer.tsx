@@ -539,6 +539,7 @@ export function SessionChatBoxContainer({
     <SessionChatBox
       status={status}
       projectId={projectId}
+      fullWidth={isCompact}
       editor={{
         value: editorValue,
         onChange: handleEditorChange,

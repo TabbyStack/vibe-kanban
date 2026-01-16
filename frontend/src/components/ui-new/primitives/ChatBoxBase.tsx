@@ -70,6 +70,9 @@ interface ChatBoxBaseProps {
 
   // Local images for immediate preview (before saved to server)
   localImages?: LocalImageMetadata[];
+
+  // Whether to use full width (no w-chat constraint)
+  fullWidth?: boolean;
 }
 
 /**
@@ -95,6 +98,7 @@ export function ChatBoxBase({
   isRunning,
   focusKey,
   localImages,
+  fullWidth,
 }: ChatBoxBaseProps) {
   const { t } = useTranslation('common');
   const variantLabel = toPrettyCase(variant?.selected || 'DEFAULT');
@@ -103,7 +107,8 @@ export function ChatBoxBase({
   return (
     <div
       className={cn(
-        'flex w-chat max-w-full flex-col',
+        'flex flex-col',
+        fullWidth ? 'w-full' : 'w-chat max-w-full',
         'rounded-md border',
         'transition-colors duration-150',
         visualVariant === VisualVariant.NORMAL &&

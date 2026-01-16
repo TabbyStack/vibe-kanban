@@ -107,7 +107,7 @@ export function UnifiedChatView({
         {/* Chat area: use absolute positioning for reliable height */}
         <div className="flex-1 min-h-0 relative">
           <div className="absolute inset-0 flex justify-center overflow-hidden">
-            <div className={mode === 'full-screen' ? 'w-chat max-w-full h-full' : 'w-full h-full'}>
+            <div className="w-chat max-w-full h-full">
               <ChatConversationList
                 attempt={attempt}
                 task={task}
@@ -125,7 +125,7 @@ export function UnifiedChatView({
         )}
 
         {/* Chat input */}
-        <div className={mode === 'full-screen' ? 'shrink-0 flex justify-center @container pl-px pb-base' : 'shrink-0 flex justify-center px-base pb-base'}>
+        <div className={mode === 'full-screen' ? 'shrink-0 flex justify-center @container pl-px pb-base' : 'shrink-0 px-base pb-base'}>
           <SessionChatBoxContainer
             session={session}
             taskId={task?.id}

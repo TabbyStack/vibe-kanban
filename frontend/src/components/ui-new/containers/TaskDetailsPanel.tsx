@@ -332,16 +332,12 @@ function TaskDetailsPanelContent({
             <>
               {/* Summary & Actions */}
               <div className="border-t">
-                <div className="mx-auto w-full max-w-[50rem]">
-                  <StickyNextActionCard attempt={attempt} task={selectedTask} />
-                </div>
+                <StickyNextActionCard attempt={attempt} task={selectedTask} />
               </div>
 
               {/* Todos section */}
               <div className="border-t">
-                <div className="mx-auto w-full max-w-[50rem]">
-                  <TodoPanel />
-                </div>
+                <TodoPanel />
               </div>
             </>
           )}
