@@ -117,30 +117,33 @@ export function UnifiedChatView({
           </div>
         </div>
 
-        {/* Footer: pinned with shrink-0 */}
-        {renderAboveInput && (
-          <div className="shrink-0">
-            {renderAboveInput()}
-          </div>
-        )}
+        {/* Footer: pinned with shrink-0, centered to match chat content */}
+        <div className="shrink-0 flex flex-col items-center px-base pb-base">
+          {/* Above input content (Summary & Actions, Todos) */}
+          {renderAboveInput && (
+            <div className="w-chat max-w-full">
+              {renderAboveInput()}
+            </div>
+          )}
 
-        {/* Chat input */}
-        <div className={mode === 'full-screen' ? 'shrink-0 flex justify-center @container pl-px pb-base' : 'shrink-0 px-base pb-base'}>
-          <SessionChatBoxContainer
-            session={session}
-            taskId={task?.id}
-            sessions={sessions}
-            onSelectSession={onSelectSession}
-            filesChanged={diffStats?.filesChanged}
-            linesAdded={diffStats?.linesAdded}
-            linesRemoved={diffStats?.linesRemoved}
-            onViewCode={onViewCode}
-            projectId={projectId}
-            isNewSessionMode={isNewSessionMode}
-            onStartNewSession={onStartNewSession}
-            workspaceId={attempt.id}
-            variant={chatBoxVariant}
-          />
+          {/* Chat input */}
+          <div className="w-chat max-w-full @container">
+            <SessionChatBoxContainer
+              session={session}
+              taskId={task?.id}
+              sessions={sessions}
+              onSelectSession={onSelectSession}
+              filesChanged={diffStats?.filesChanged}
+              linesAdded={diffStats?.linesAdded}
+              linesRemoved={diffStats?.linesRemoved}
+              onViewCode={onViewCode}
+              projectId={projectId}
+              isNewSessionMode={isNewSessionMode}
+              onStartNewSession={onStartNewSession}
+              workspaceId={attempt.id}
+              variant={chatBoxVariant}
+            />
+          </div>
         </div>
       </div>
     </ChatContextProvider>
