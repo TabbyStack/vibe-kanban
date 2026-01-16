@@ -335,7 +335,10 @@ function TaskDetailsPanelContent({
                 {/* Summary & Actions - sticky above TodoPanel */}
                 <div className="shrink-0 border-t">
                   <div className="mx-auto w-full max-w-[50rem]">
-                    <StickyNextActionCard attempt={attempt} task={selectedTask} />
+                    <StickyNextActionCard
+                      attempt={attempt}
+                      task={selectedTask}
+                    />
                   </div>
                 </div>
 
