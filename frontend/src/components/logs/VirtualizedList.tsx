@@ -122,7 +122,7 @@ const VirtualizedList = ({ attempt, task }: VirtualizedListProps) => {
       >
         <VirtuosoMessageList<PatchTypeWithKey, MessageListContext>
           ref={messageListRef}
-          className="h-full scrollbar-none"
+          style={{ height: '100%', width: '100%' }}
           data={channelData}
           initialLocation={INITIAL_TOP_ITEM}
           context={messageListContext}
