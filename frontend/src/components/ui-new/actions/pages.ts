@@ -70,7 +70,7 @@ export const Pages: Record<StaticPageId, CommandBarPage> = {
           { type: 'action', action: Actions.OpenInIDE },
           { type: 'action', action: Actions.CopyPath },
           // { type: 'action', action: Actions.ToggleDevServer },
-          { type: 'action', action: Actions.OpenInOldUI },
+          { type: 'action', action: Actions.OpenInMainBoard },
           { type: 'childPages', id: 'workspaceActions' },
           { type: 'childPages', id: 'gitActions' },
         ],

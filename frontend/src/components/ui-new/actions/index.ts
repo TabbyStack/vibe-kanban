@@ -457,9 +457,9 @@ export const Actions = {
   },
 
   // === Navigation Actions ===
-  OpenInOldUI: {
-    id: 'open-in-old-ui',
-    label: 'Open in Old UI',
+  OpenInMainBoard: {
+    id: 'open-in-main-board',
+    label: 'Open in Main Board',
     icon: SignOutIcon,
     requiresTarget: false,
     execute: async (ctx) => {
@@ -478,15 +478,8 @@ export const Actions = {
         return;
       }
 
-      // Fetch task lazily to get project_id
-      const task = await tasksApi.getById(workspace.task_id);
-      if (task?.project_id) {
-        ctx.navigate(
-          `/projects/${task.project_id}/tasks/${workspace.task_id}/attempts/${workspace.id}`
-        );
-      } else {
-        ctx.navigate('/');
-      }
+      // Navigate to main board with task in URL (opens in slide-over/peek panel)
+      ctx.navigate(`/?task=${workspace.task_id}`);
     },
   },
 
@@ -736,7 +729,7 @@ export type NavbarItem = ActionDefinition | typeof NavbarDivider;
 
 // Navbar action groups define which actions appear in each section
 export const NavbarActionGroups = {
-  left: [Actions.ArchiveWorkspace, Actions.OpenInOldUI] as ActionDefinition[],
+  left: [Actions.ArchiveWorkspace, Actions.OpenInMainBoard] as ActionDefinition[],
   right: [
     Actions.ToggleDiffViewMode,
     Actions.ToggleAllDiffs,

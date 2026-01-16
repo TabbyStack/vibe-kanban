@@ -1,8 +1,9 @@
 import { useState, useCallback, useRef, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Allotment, type AllotmentHandle } from 'allotment';
 import 'allotment/dist/style.css';
 import { useAllBoards } from '@/hooks/useAllBoards';
+import { useTask } from '@/hooks/useTask';
 import { SwimlaneKanban } from '@/components/ui-new/views/SwimlaneKanban';
 import { Navbar } from '@/components/layout/Navbar';
 import { useProjectGroupMutations } from '@/hooks/useProjectGroupMutations';
@@ -25,8 +26,12 @@ import {
 
 export function AllBoardsLayout() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { groupedProjects, groups, isLoading, error } = useAllBoards();
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Get task ID from URL query parameter
+  const urlTaskId = searchParams.get('task');
 
   // Left sidebar state
   const allotmentRef = useRef<AllotmentHandle>(null);
@@ -86,11 +91,14 @@ export function AllBoardsLayout() {
   const [isCreatingGroup, setIsCreatingGroup] = useState(false);
   const [newGroupName, setNewGroupName] = useState('');
 
-  // Track selected project and task for the details panel
-  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(
-    null
-  );
-  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
+  // Fetch task data to get project_id when loading from URL
+  const { data: selectedTaskData } = useTask(urlTaskId ?? undefined, {
+    enabled: !!urlTaskId,
+  });
+
+  // Derive selected task/project from URL parameter and fetched task data
+  const selectedTaskId = urlTaskId;
+  const selectedProjectId = selectedTaskData?.project_id ?? null;
 
   // Track selected workspace for slide-over preview
   const [previewWorkspaceId, setPreviewWorkspaceId] = useState<string | null>(
@@ -129,15 +137,26 @@ export function AllBoardsLayout() {
     setExpandedGroups(new Set());
   }, []);
 
-  const handleTaskClick = useCallback((projectId: string, taskId: string) => {
-    setSelectedProjectId(projectId);
-    setSelectedTaskId(taskId);
-  }, []);
+  const handleTaskClick = useCallback(
+    (_projectId: string, taskId: string) => {
+      // Update URL with task parameter (projectId is derived from taskToProjectMap)
+      setSearchParams((prev) => {
+        const next = new URLSearchParams(prev);
+        next.set('task', taskId);
+        return next;
+      });
+    },
+    [setSearchParams]
+  );
 
   const handleClosePanel = useCallback(() => {
-    setSelectedProjectId(null);
-    setSelectedTaskId(null);
-  }, []);
+    // Remove task parameter from URL
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      next.delete('task');
+      return next;
+    });
+  }, [setSearchParams]);
 
   const handleOpenBoard = useCallback((projectId: string) => {
     // Filter to show only this project instead of navigating to legacy route

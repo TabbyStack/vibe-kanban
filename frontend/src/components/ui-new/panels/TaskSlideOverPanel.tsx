@@ -62,10 +62,11 @@ export function TaskSlideOverPanel({
 
   const handleOpenFullPage = useCallback(() => {
     if (attemptId) {
+      // Navigate directly without calling handleClose - we're leaving the page
+      // so no need to update the URL search params (which would interfere with navigation)
       navigate(`/workspaces/${attemptId}`);
     }
-    handleClose();
-  }, [navigate, attemptId, handleClose]);
+  }, [navigate, attemptId]);
 
   // Build title with context breadcrumb
   const title = (
