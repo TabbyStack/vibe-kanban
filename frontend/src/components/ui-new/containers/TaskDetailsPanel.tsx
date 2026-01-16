@@ -27,7 +27,7 @@ import { DiffsPanel } from '@/components/panels/DiffsPanel';
 import TaskPanel from '@/components/panels/TaskPanel';
 import TodoPanel from '@/components/tasks/TodoPanel';
 import { StickyNextActionCard } from '@/components/tasks/StickyNextActionCard';
-import { NewCard, NewCardHeader } from '@/components/ui/new-card';
+import { NewCardHeader } from '@/components/ui/new-card';
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -40,11 +40,7 @@ import { AttemptHeaderActions } from '@/components/panels/AttemptHeaderActions';
 import { TaskPanelHeaderActions } from '@/components/panels/TaskPanelHeaderActions';
 
 // Unified chat components
-import {
-  ChatContextProvider,
-  ChatConversationList,
-} from '@/components/chat';
-import { SessionChatBoxContainer } from '@/components/ui-new/containers/SessionChatBoxContainer';
+import { UnifiedChatView } from '@/components/chat';
 
 import type { TaskWithAttemptStatus } from 'shared/types';
 
@@ -316,65 +312,44 @@ function TaskDetailsPanelContent({
     </NewCardHeader>
   );
 
-  const attemptContent = (
-    <NewCard className="flex-1 min-h-0 flex flex-col overflow-hidden bg-muted border-0">
-      {isTaskView ? (
-        <TaskPanel
+  const attemptContent = isTaskView ? (
+    <TaskPanel
+      task={selectedTask}
+      projectId={projectId}
+      onAttemptCreated={handleAttemptCreated}
+      onAttemptClick={setSelectedAttemptId}
+    />
+  ) : attempt ? (
+    <div className="flex-1 min-h-0 flex flex-col overflow-hidden bg-muted">
+      <GitErrorBanner />
+      <div className="flex-1 min-h-0">
+        <UnifiedChatView
+          attempt={attempt}
           task={selectedTask}
+          mode="slide-over"
           projectId={projectId}
-          onAttemptCreated={handleAttemptCreated}
-          onAttemptClick={setSelectedAttemptId}
+          renderAboveInput={() => (
+            <>
+              {/* Summary & Actions */}
+              <div className="border-t">
+                <div className="mx-auto w-full max-w-[50rem]">
+                  <StickyNextActionCard attempt={attempt} task={selectedTask} />
+                </div>
+              </div>
+
+              {/* Todos section */}
+              <div className="border-t">
+                <div className="mx-auto w-full max-w-[50rem]">
+                  <TodoPanel />
+                </div>
+              </div>
+            </>
+          )}
         />
-      ) : attempt ? (
-        <ChatContextProvider
-          attemptId={attempt.id}
-          sessionId={attempt.session?.id}
-        >
-          <GitErrorBanner />
-          <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
-            {/* Logs container - fixed height for testing scroll */}
-            <div className="h-[400px] overflow-hidden">
-              <div className="h-full w-full relative">
-                <ChatConversationList
-                  attempt={attempt}
-                  task={selectedTask}
-                  className="h-full w-full scrollbar-none"
-                />
-              </div>
-            </div>
-
-            {/* Summary & Actions - sticky above TodoPanel */}
-            <div className="shrink-0 border-t">
-              <div className="mx-auto w-full max-w-[50rem]">
-                <StickyNextActionCard attempt={attempt} task={selectedTask} />
-              </div>
-            </div>
-
-            {/* Todos section */}
-            <div className="shrink-0 border-t">
-              <div className="mx-auto w-full max-w-[50rem]">
-                <TodoPanel />
-              </div>
-            </div>
-
-            {/* Chat input - compact variant for slide-over */}
-            <div className="min-h-0 max-h-[50%] border-t overflow-hidden bg-background">
-              <div className="mx-auto w-full max-w-[50rem] h-full min-h-0">
-                <SessionChatBoxContainer
-                  session={attempt.session}
-                  taskId={selectedTask.id}
-                  workspaceId={attempt.id}
-                  projectId={projectId}
-                  variant="compact"
-                />
-              </div>
-            </div>
-          </div>
-        </ChatContextProvider>
-      ) : (
-        <div className="p-6 text-muted-foreground">Loading attempt...</div>
-      )}
-    </NewCard>
+      </div>
+    </div>
+  ) : (
+    <div className="p-6 text-muted-foreground">Loading attempt...</div>
   );
 
   const auxContent =
@@ -437,7 +412,7 @@ function TaskDetailsPanelContent({
               </Alert>
             )}
 
-            <div className="flex-1 min-h-0 overflow-hidden">{content}</div>
+            <div className="flex-1 min-h-0 overflow-hidden flex flex-col">{content}</div>
           </div>
         </ReviewProvider>
       </ClickedElementsProvider>
