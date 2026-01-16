@@ -313,6 +313,7 @@ export function AllBoardsLayout() {
         {/* Slide-over panel for task details */}
         {selectedProjectId && (
           <TaskSlideOverPanel
+            key={`${selectedProjectId}-${selectedTaskId}`}
             projectId={selectedProjectId}
             taskId={selectedTaskId ?? ''}
             open={!!selectedTaskId}

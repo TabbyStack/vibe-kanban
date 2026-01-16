@@ -8,7 +8,7 @@ import {
 } from '@virtuoso.dev/message-list';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
-import DisplayConversationEntry from '../NormalizedConversation/DisplayConversationEntry';
+import NewDisplayConversationEntry from '../ui-new/NewDisplayConversationEntry';
 import { useEntries } from '@/contexts/EntriesContext';
 import {
   AddEntryType,
@@ -56,9 +56,9 @@ const ItemContent: VirtuosoMessageListProps<
   if (data.type === 'STDERR') {
     return <p>{data.content}</p>;
   }
-  if (data.type === 'NORMALIZED_ENTRY' && attempt) {
+  if (data.type === 'NORMALIZED_ENTRY') {
     return (
-      <DisplayConversationEntry
+      <NewDisplayConversationEntry
         expansionKey={data.patchKey}
         entry={data.content}
         executionProcessId={data.executionProcessId}
@@ -122,18 +122,18 @@ const VirtualizedList = ({ attempt, task }: VirtualizedListProps) => {
       >
         <VirtuosoMessageList<PatchTypeWithKey, MessageListContext>
           ref={messageListRef}
-          className="flex-1"
+          style={{ height: '100%', width: '100%' }}
           data={channelData}
           initialLocation={INITIAL_TOP_ITEM}
           context={messageListContext}
           computeItemKey={computeItemKey}
           ItemContent={ItemContent}
-          Header={() => <div className="h-2"></div>}
-          Footer={() => <div className="h-2"></div>}
+          Header={() => <div className="h-2" />}
+          Footer={() => <div className="h-2" />}
         />
       </VirtuosoMessageListLicense>
-      {loading && (
-        <div className="float-left top-0 left-0 w-full h-full bg-primary flex flex-col gap-2 justify-center items-center">
+      {loading && !channelData?.data?.length && (
+        <div className="absolute inset-0 bg-primary flex flex-col gap-2 justify-center items-center z-10">
           <Loader2 className="h-8 w-8 animate-spin" />
           <p>Loading History</p>
         </div>

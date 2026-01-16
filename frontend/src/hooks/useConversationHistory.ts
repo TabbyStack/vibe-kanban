@@ -94,11 +94,14 @@ export const useConversationHistory = ({
   attempt,
   onEntriesUpdated,
 }: UseConversationHistoryParams): UseConversationHistoryResult => {
-  const { executionProcessesVisible: executionProcessesRaw } =
-    useExecutionProcessesContext();
+  const {
+    executionProcessesVisible: executionProcessesRaw,
+    isLoading: isExecutionProcessesLoading,
+  } = useExecutionProcessesContext();
   const executionProcesses = useRef<ExecutionProcess[]>(executionProcessesRaw);
   const displayedExecutionProcesses = useRef<ExecutionProcessStateStore>({});
   const loadedInitialEntries = useRef(false);
+  const isLoadingInitialEntries = useRef(false); // Guard to prevent re-running while loading
   const streamingProcessIdsRef = useRef<Set<string>>(new Set());
   const onEntriesUpdatedRef = useRef<OnEntriesUpdated | null>(null);
 
@@ -114,12 +117,22 @@ export const useConversationHistory = ({
 
   // Keep executionProcesses up to date
   useEffect(() => {
-    executionProcesses.current = executionProcessesRaw.filter(
+    const filtered = executionProcessesRaw.filter(
       (ep) =>
         ep.run_reason === 'setupscript' ||
         ep.run_reason === 'cleanupscript' ||
         ep.run_reason === 'codingagent'
     );
+    console.log('[useConversationHistory] Processes ref update:', {
+      rawCount: executionProcessesRaw.length,
+      filteredCount: filtered.length,
+      filtered: filtered.map((p) => ({
+        id: p.id.slice(0, 8),
+        status: p.status,
+        run_reason: p.run_reason,
+      })),
+    });
+    executionProcesses.current = filtered;
   }, [executionProcessesRaw]);
 
   const loadEntriesForHistoricExecutionProcess = (
@@ -132,15 +145,26 @@ export const useConversationHistory = ({
       url = `/api/execution-processes/${executionProcess.id}/normalized-logs/ws`;
     }
 
+    console.log('[useConversationHistory] Loading historic process:', {
+      processId: executionProcess.id.slice(0, 8),
+      status: executionProcess.status,
+      run_reason: executionProcess.run_reason,
+      url: url.slice(-50),
+    });
+
     return new Promise<PatchType[]>((resolve) => {
       const controller = streamJsonPatchEntries<PatchType>(url, {
         onFinished: (allEntries) => {
+          console.log('[useConversationHistory] Historic process loaded:', {
+            processId: executionProcess.id.slice(0, 8),
+            entryCount: allEntries.length,
+          });
           controller.close();
           resolve(allEntries);
         },
         onError: (err) => {
-          console.warn!(
-            `Error loading entries for historic execution process ${executionProcess.id}`,
+          console.warn(
+            `[useConversationHistory] Error loading historic process ${executionProcess.id.slice(0, 8)}:`,
             err
           );
           controller.close();
@@ -422,6 +446,13 @@ export const useConversationHistory = ({
       loading: boolean
     ) => {
       const entries = flattenEntriesForEmit(executionProcessState);
+      console.log('[useConversationHistory] EMIT:', {
+        addEntryType,
+        loading,
+        entryCount: entries.length,
+        hasCallback: !!onEntriesUpdatedRef.current,
+        entryTypes: entries.slice(0, 5).map((e) => e.type),
+      });
       let modifiedAddEntryType = addEntryType;
 
       // Modify so that if add entry type is 'running' and last entry is a plan, emit special plan type
@@ -498,13 +529,31 @@ export const useConversationHistory = ({
     useCallback(async (): Promise<ExecutionProcessStateStore> => {
       const localDisplayedExecutionProcesses: ExecutionProcessStateStore = {};
 
-      if (!executionProcesses?.current) return localDisplayedExecutionProcesses;
+      if (!executionProcesses?.current) {
+        console.log(
+          '[useConversationHistory] loadInitialEntries: No processes in ref'
+        );
+        return localDisplayedExecutionProcesses;
+      }
 
-      for (const executionProcess of [
-        ...executionProcesses.current,
-      ].reverse()) {
-        if (executionProcess.status === ExecutionProcessStatus.running)
+      const processesToLoad = [...executionProcesses.current].reverse();
+      console.log('[useConversationHistory] loadInitialEntries starting:', {
+        processCount: processesToLoad.length,
+        processes: processesToLoad.map((p) => ({
+          id: p.id.slice(0, 8),
+          status: p.status,
+          run_reason: p.run_reason,
+        })),
+      });
+
+      for (const executionProcess of processesToLoad) {
+        if (executionProcess.status === ExecutionProcessStatus.running) {
+          console.log(
+            '[useConversationHistory] Skipping running process:',
+            executionProcess.id.slice(0, 8)
+          );
           continue;
+        }
 
         const entries =
           await loadEntriesForHistoricExecutionProcess(executionProcess);
@@ -517,13 +566,27 @@ export const useConversationHistory = ({
           entries: entriesWithKey,
         };
 
-        if (
-          flattenEntries(localDisplayedExecutionProcesses).length >
-          MIN_INITIAL_ENTRIES
-        ) {
+        const currentEntryCount = flattenEntries(
+          localDisplayedExecutionProcesses
+        ).length;
+        console.log('[useConversationHistory] loadInitialEntries progress:', {
+          processId: executionProcess.id.slice(0, 8),
+          loadedEntries: entries.length,
+          totalFlattenedEntries: currentEntryCount,
+          minRequired: MIN_INITIAL_ENTRIES,
+        });
+
+        if (currentEntryCount > MIN_INITIAL_ENTRIES) {
+          console.log(
+            '[useConversationHistory] loadInitialEntries: Reached minimum, stopping'
+          );
           break;
         }
       }
+
+      console.log('[useConversationHistory] loadInitialEntries complete:', {
+        processesLoaded: Object.keys(localDisplayedExecutionProcesses).length,
+      });
 
       return localDisplayedExecutionProcesses;
     }, [executionProcesses]);
@@ -598,17 +661,64 @@ export const useConversationHistory = ({
   // Initial load when attempt changes
   useEffect(() => {
     let cancelled = false;
+    console.log('[useConversationHistory] Initial load effect triggered:', {
+      attemptId: attempt.id.slice(0, 8),
+      isExecutionProcessesLoading,
+      rawProcessCount: executionProcessesRaw.length,
+      loadedInitialEntries: loadedInitialEntries.current,
+      isLoadingInitialEntries: isLoadingInitialEntries.current,
+    });
     (async () => {
-      // Waiting for execution processes to load
-      if (
-        executionProcesses?.current.length === 0 ||
-        loadedInitialEntries.current
-      )
+      // Don't proceed while execution processes are still loading
+      if (isExecutionProcessesLoading) return;
+
+      // Don't re-run if we're already loading or have loaded
+      if (isLoadingInitialEntries.current || loadedInitialEntries.current) {
+        console.log(
+          '[useConversationHistory] Skipping - already loading or loaded'
+        );
         return;
+      }
+
+      // Filter execution processes (same logic as the ref-update effect)
+      // We do this here to avoid race condition where the ref-update effect
+      // hasn't run yet when this effect checks the ref
+      const filteredProcesses = executionProcessesRaw.filter(
+        (ep) =>
+          ep.run_reason === 'setupscript' ||
+          ep.run_reason === 'cleanupscript' ||
+          ep.run_reason === 'codingagent'
+      );
+
+      // Update ref synchronously before checking
+      executionProcesses.current = filteredProcesses;
+
+      console.log('[useConversationHistory] After filtering:', {
+        filteredCount: filteredProcesses.length,
+        willSkip: filteredProcesses.length === 0,
+      });
+
+      // If no execution processes, nothing to show
+      if (filteredProcesses.length === 0) return;
+
+      // Mark that we're loading to prevent re-runs
+      isLoadingInitialEntries.current = true;
 
       // Initial entries
       const allInitialEntries = await loadInitialEntries();
-      if (cancelled) return;
+      if (cancelled) {
+        console.log(
+          '[useConversationHistory] CANCELLED after loadInitialEntries - but continuing anyway since load completed'
+        );
+        // Don't return - we want to use the loaded entries even if effect re-ran
+      }
+      console.log('[useConversationHistory] Initial entries loaded:', {
+        processCount: Object.keys(allInitialEntries).length,
+        entryCount: Object.values(allInitialEntries).reduce(
+          (sum, p) => sum + p.entries.length,
+          0
+        ),
+      });
       mergeIntoDisplayed((state) => {
         Object.assign(state, allInitialEntries);
       });
@@ -631,6 +741,8 @@ export const useConversationHistory = ({
   }, [
     attempt.id,
     idListKey,
+    isExecutionProcessesLoading,
+    executionProcessesRaw,
     loadInitialEntries,
     loadRemainingEntriesInBatches,
     emitEntries,
@@ -691,8 +803,13 @@ export const useConversationHistory = ({
 
   // Reset state when attempt changes
   useEffect(() => {
+    console.log(
+      '[useConversationHistory] RESET for attempt:',
+      attempt.id.slice(0, 8)
+    );
     displayedExecutionProcesses.current = {};
     loadedInitialEntries.current = false;
+    isLoadingInitialEntries.current = false;
     streamingProcessIdsRef.current.clear();
     emitEntries(displayedExecutionProcesses.current, 'initial', true);
   }, [attempt.id, emitEntries]);

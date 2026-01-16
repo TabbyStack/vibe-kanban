@@ -35,8 +35,10 @@ export function DevServerLogsView({
   }
 
   const activeProcess =
-    devServerProcesses.find((p) => p.id === activeProcessId) ??
-    devServerProcesses[0];
+    devServerProcesses.length > 0
+      ? (devServerProcesses.find((p) => p.id === activeProcessId) ??
+        devServerProcesses[0])
+      : undefined;
 
   return (
     <details
@@ -89,7 +91,7 @@ export function DevServerLogsView({
               ))}
             </div>
           )}
-          <ProcessLogsViewer processId={activeProcess.id} />
+          {activeProcess && <ProcessLogsViewer processId={activeProcess.id} />}
         </div>
       )}
     </details>

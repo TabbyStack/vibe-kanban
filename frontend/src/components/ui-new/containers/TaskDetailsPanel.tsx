@@ -11,7 +11,7 @@ import {
 import { useTaskAttempts } from '@/hooks/useTaskAttempts';
 import { useTaskAttemptWithSession } from '@/hooks/useTaskAttempt';
 import { useBranchStatus, useAttemptExecution } from '@/hooks';
-import { ExecutionProcessesProvider } from '@/contexts/ExecutionProcessesContext';
+import type { WorkspaceWithSession } from '@/types/attempt';
 import { ClickedElementsProvider } from '@/contexts/ClickedElementsProvider';
 import { ReviewProvider } from '@/contexts/ReviewProvider';
 import {
@@ -27,6 +27,7 @@ import { DiffsPanel } from '@/components/panels/DiffsPanel';
 import TaskAttemptPanel from '@/components/panels/TaskAttemptPanel';
 import TaskPanel from '@/components/panels/TaskPanel';
 import TodoPanel from '@/components/tasks/TodoPanel';
+import { StickyNextActionCard } from '@/components/tasks/StickyNextActionCard';
 import { NewCard, NewCardHeader } from '@/components/ui/new-card';
 import {
   Breadcrumb,
@@ -91,12 +92,15 @@ interface TaskDetailsPanelProps {
   onClose: () => void;
   /** Hide the internal header (for slide-over panel mode where header is provided externally) */
   hideHeader?: boolean;
+  /** Pre-loaded attempt from parent to ensure session consistency with ExecutionProcessesProvider */
+  preloadedAttempt?: WorkspaceWithSession;
 }
 
 function TaskDetailsPanelContent({
   taskId: initialTaskId,
   onClose,
   hideHeader = false,
+  preloadedAttempt,
 }: Omit<TaskDetailsPanelProps, 'projectId'>) {
   const { t } = useTranslation(['tasks', 'common']);
 
@@ -162,10 +166,15 @@ function TaskDetailsPanelContent({
     }
   }, [initialTaskId, selectedAttemptId, isAttemptsLoading, latestAttemptId]);
 
-  const isTaskView = !!initialTaskId && !selectedAttemptId;
-  const { data: attempt } = useTaskAttemptWithSession(
-    selectedAttemptId ?? undefined
+  // Show task view only when no attempt is selected AND no preloaded attempt is provided
+  const isTaskView = !!initialTaskId && !selectedAttemptId && !preloadedAttempt;
+
+  // Use preloadedAttempt if provided (ensures session consistency with parent's ExecutionProcessesProvider)
+  // Otherwise fall back to fetching our own
+  const { data: fetchedAttempt } = useTaskAttemptWithSession(
+    preloadedAttempt ? undefined : (selectedAttemptId ?? undefined)
   );
+  const attempt = preloadedAttempt ?? fetchedAttempt;
 
   const { data: branchStatus, error: branchStatusError } = useBranchStatus(
     attempt?.id
@@ -302,7 +311,7 @@ function TaskDetailsPanelContent({
   );
 
   const attemptContent = (
-    <NewCard className="h-full min-h-0 flex flex-col bg-muted border-0">
+    <NewCard className="flex-1 min-h-0 flex flex-col overflow-hidden bg-muted border-0">
       {isTaskView ? (
         <TaskPanel
           task={selectedTask}
@@ -315,9 +324,23 @@ function TaskDetailsPanelContent({
           {({ logs, followUp }) => (
             <>
               <GitErrorBanner />
-              <div className="flex-1 min-h-0 flex flex-col">
-                <div className="flex-1 min-h-0 flex flex-col">{logs}</div>
+              <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
+                {/* Logs container - fixed height for testing scroll */}
+                <div className="h-[400px] overflow-hidden">
+                  <div className="h-full w-full">{logs}</div>
+                </div>
 
+                {/* Summary & Actions - sticky above TodoPanel */}
+                <div className="shrink-0 border-t">
+                  <div className="mx-auto w-full max-w-[50rem]">
+                    <StickyNextActionCard
+                      attempt={attempt}
+                      task={selectedTask}
+                    />
+                  </div>
+                </div>
+
+                {/* Todos section */}
                 <div className="shrink-0 border-t">
                   <div className="mx-auto w-full max-w-[50rem]">
                     <TodoPanel />
@@ -356,7 +379,7 @@ function TaskDetailsPanelContent({
 
   // Simplified layout - no kanban, just task details
   const content = (
-    <div className="h-full flex flex-col">
+    <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
       {/* Header - hidden when used in slide-over panel */}
       {!hideHeader && (
         <div className="shrink-0 sticky top-0 z-20 bg-background border-b">
@@ -365,7 +388,7 @@ function TaskDetailsPanelContent({
       )}
 
       {/* Content */}
-      <div className="flex-1 min-h-0">
+      <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
         {mode === null ? (
           attemptContent
         ) : (
@@ -380,28 +403,25 @@ function TaskDetailsPanelContent({
     </div>
   );
 
+  // ExecutionProcessesProvider is now provided by TaskSlideOverPanel at the layout level
+  // This matches the WorkspacesLayout pattern where the provider wraps the layout
   return (
     <GitOperationsProvider attemptId={attempt?.id}>
       <ClickedElementsProvider attempt={attempt}>
         <ReviewProvider attemptId={attempt?.id}>
-          <ExecutionProcessesProvider
-            attemptId={attempt?.id}
-            sessionId={attempt?.session?.id}
-          >
-            <div className="h-full flex flex-col">
-              {streamError && (
-                <Alert className="w-full z-30 xl:sticky xl:top-0">
-                  <AlertTitle className="flex items-center gap-2">
-                    <WarningIcon className="size-icon-sm" />
-                    {t('common:states.reconnecting')}
-                  </AlertTitle>
-                  <AlertDescription>{streamError}</AlertDescription>
-                </Alert>
-              )}
+          <div className="h-full flex flex-col overflow-hidden">
+            {streamError && (
+              <Alert className="w-full z-30 xl:sticky xl:top-0">
+                <AlertTitle className="flex items-center gap-2">
+                  <WarningIcon className="size-icon-sm" />
+                  {t('common:states.reconnecting')}
+                </AlertTitle>
+                <AlertDescription>{streamError}</AlertDescription>
+              </Alert>
+            )}
 
-              <div className="flex-1 min-h-0">{content}</div>
-            </div>
-          </ExecutionProcessesProvider>
+            <div className="flex-1 min-h-0 overflow-hidden">{content}</div>
+          </div>
         </ReviewProvider>
       </ClickedElementsProvider>
     </GitOperationsProvider>
@@ -417,6 +437,7 @@ export function TaskDetailsPanel({
   taskId,
   onClose,
   hideHeader = false,
+  preloadedAttempt,
 }: TaskDetailsPanelProps) {
   return (
     <ProjectProviderOverride projectId={projectId}>
@@ -424,6 +445,7 @@ export function TaskDetailsPanel({
         taskId={taskId}
         onClose={onClose}
         hideHeader={hideHeader}
+        preloadedAttempt={preloadedAttempt}
       />
     </ProjectProviderOverride>
   );

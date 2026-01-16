@@ -39,8 +39,10 @@ export function PreviewControlsContainer({
   }, [devServerProcesses, activeProcessId]);
 
   const activeProcess =
-    devServerProcesses.find((p) => p.id === activeProcessId) ??
-    devServerProcesses[0];
+    devServerProcesses.length > 0
+      ? (devServerProcesses.find((p) => p.id === activeProcessId) ??
+        devServerProcesses[0])
+      : undefined;
 
   const { logs, error: logsError } = useLogStream(activeProcess?.id ?? '');
 

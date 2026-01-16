@@ -100,6 +100,7 @@ export function SessionChatBoxContainer({
   const pendingApproval = useMemo(() => {
     for (const entry of entries) {
       if (entry.type !== 'NORMALIZED_ENTRY') continue;
+      if (!entry.content) continue;
       const entryType = entry.content.entry_type;
       if (
         entryType.type === 'tool_use' &&
