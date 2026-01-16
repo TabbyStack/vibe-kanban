@@ -530,7 +530,9 @@ export const useConversationHistory = ({
       const localDisplayedExecutionProcesses: ExecutionProcessStateStore = {};
 
       if (!executionProcesses?.current) {
-        console.log('[useConversationHistory] loadInitialEntries: No processes in ref');
+        console.log(
+          '[useConversationHistory] loadInitialEntries: No processes in ref'
+        );
         return localDisplayedExecutionProcesses;
       }
 
@@ -546,7 +548,10 @@ export const useConversationHistory = ({
 
       for (const executionProcess of processesToLoad) {
         if (executionProcess.status === ExecutionProcessStatus.running) {
-          console.log('[useConversationHistory] Skipping running process:', executionProcess.id.slice(0, 8));
+          console.log(
+            '[useConversationHistory] Skipping running process:',
+            executionProcess.id.slice(0, 8)
+          );
           continue;
         }
 
@@ -561,7 +566,9 @@ export const useConversationHistory = ({
           entries: entriesWithKey,
         };
 
-        const currentEntryCount = flattenEntries(localDisplayedExecutionProcesses).length;
+        const currentEntryCount = flattenEntries(
+          localDisplayedExecutionProcesses
+        ).length;
         console.log('[useConversationHistory] loadInitialEntries progress:', {
           processId: executionProcess.id.slice(0, 8),
           loadedEntries: entries.length,
@@ -570,7 +577,9 @@ export const useConversationHistory = ({
         });
 
         if (currentEntryCount > MIN_INITIAL_ENTRIES) {
-          console.log('[useConversationHistory] loadInitialEntries: Reached minimum, stopping');
+          console.log(
+            '[useConversationHistory] loadInitialEntries: Reached minimum, stopping'
+          );
           break;
         }
       }
@@ -665,7 +674,9 @@ export const useConversationHistory = ({
 
       // Don't re-run if we're already loading or have loaded
       if (isLoadingInitialEntries.current || loadedInitialEntries.current) {
-        console.log('[useConversationHistory] Skipping - already loading or loaded');
+        console.log(
+          '[useConversationHistory] Skipping - already loading or loaded'
+        );
         return;
       }
 
@@ -696,7 +707,9 @@ export const useConversationHistory = ({
       // Initial entries
       const allInitialEntries = await loadInitialEntries();
       if (cancelled) {
-        console.log('[useConversationHistory] CANCELLED after loadInitialEntries - but continuing anyway since load completed');
+        console.log(
+          '[useConversationHistory] CANCELLED after loadInitialEntries - but continuing anyway since load completed'
+        );
         // Don't return - we want to use the loaded entries even if effect re-ran
       }
       console.log('[useConversationHistory] Initial entries loaded:', {
@@ -790,7 +803,10 @@ export const useConversationHistory = ({
 
   // Reset state when attempt changes
   useEffect(() => {
-    console.log('[useConversationHistory] RESET for attempt:', attempt.id.slice(0, 8));
+    console.log(
+      '[useConversationHistory] RESET for attempt:',
+      attempt.id.slice(0, 8)
+    );
     displayedExecutionProcesses.current = {};
     loadedInitialEntries.current = false;
     isLoadingInitialEntries.current = false;

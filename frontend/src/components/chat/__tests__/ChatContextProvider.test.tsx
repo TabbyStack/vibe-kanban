@@ -42,13 +42,18 @@ describe('ChatContextProvider', () => {
 
   it('wraps children in the correct provider hierarchy', () => {
     render(
-      <ChatContextProvider attemptId="test-attempt-id" sessionId="test-session-id">
+      <ChatContextProvider
+        attemptId="test-attempt-id"
+        sessionId="test-session-id"
+      >
         <div data-testid="child-content">Test Content</div>
       </ChatContextProvider>
     );
 
     // Verify all providers are rendered in the correct order
-    expect(screen.getByTestId('approval-feedback-provider')).toBeInTheDocument();
+    expect(
+      screen.getByTestId('approval-feedback-provider')
+    ).toBeInTheDocument();
     expect(screen.getByTestId('entries-provider')).toBeInTheDocument();
     expect(screen.getByTestId('message-edit-provider')).toBeInTheDocument();
     expect(screen.getByTestId('retry-ui-provider')).toBeInTheDocument();

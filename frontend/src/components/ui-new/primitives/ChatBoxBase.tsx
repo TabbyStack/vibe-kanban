@@ -131,14 +131,15 @@ export function ChatBoxBase({
       {banner}
 
       {/* Header - Stats and selector */}
-      {visualVariant === VisualVariant.NORMAL && (headerLeft || headerRight) && (
-        <div className="flex items-center gap-base px-base py-[9px] rounded-t-md border-b border-panel/30">
-          <div className="flex flex-1 items-center gap-base text-sm text-low">
-            {headerLeft}
+      {visualVariant === VisualVariant.NORMAL &&
+        (headerLeft || headerRight) && (
+          <div className="flex items-center gap-base px-base py-[9px] rounded-t-md border-b border-panel/30">
+            <div className="flex flex-1 items-center gap-base text-sm text-low">
+              {headerLeft}
+            </div>
+            <Toolbar className="gap-[9px]">{headerRight}</Toolbar>
           </div>
-          <Toolbar className="gap-[9px]">{headerRight}</Toolbar>
-        </div>
-      )}
+        )}
 
       {/* Editor area */}
       <div className="flex flex-col gap-plusfifty px-base py-base">
@@ -170,9 +171,7 @@ export function ChatBoxBase({
                   <DropdownMenuItem
                     key={variantName}
                     icon={
-                      variant?.selected === variantName
-                        ? CheckIcon
-                        : undefined
+                      variant?.selected === variantName ? CheckIcon : undefined
                     }
                     onClick={() => variant?.onChange(variantName)}
                   >

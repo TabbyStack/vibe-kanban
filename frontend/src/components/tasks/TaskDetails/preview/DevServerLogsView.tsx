@@ -37,7 +37,7 @@ export function DevServerLogsView({
   const activeProcess =
     devServerProcesses.length > 0
       ? (devServerProcesses.find((p) => p.id === activeProcessId) ??
-          devServerProcesses[0])
+        devServerProcesses[0])
       : undefined;
 
   return (

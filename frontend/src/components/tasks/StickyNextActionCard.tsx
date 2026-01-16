@@ -13,7 +13,10 @@ interface StickyNextActionCardProps {
  * Sticky wrapper for NextActionCard that extracts next_action data from entries context.
  * Renders at the bottom of the chat, above TodoPanel.
  */
-export function StickyNextActionCard({ attempt, task }: StickyNextActionCardProps) {
+export function StickyNextActionCard({
+  attempt,
+  task,
+}: StickyNextActionCardProps) {
   const { entries } = useEntries();
   const { nextAction, hasNextAction } = useNextAction(entries);
 

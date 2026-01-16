@@ -96,13 +96,11 @@ export function UnifiedChatView({
   renderAboveInput,
 }: UnifiedChatViewProps) {
   const { session } = attempt;
-  const chatBoxVariant: ChatBoxVariant = mode === 'slide-over' ? 'compact' : 'full';
+  const chatBoxVariant: ChatBoxVariant =
+    mode === 'slide-over' ? 'compact' : 'full';
 
   return (
-    <ChatContextProvider
-      attemptId={attempt.id}
-      sessionId={session?.id}
-    >
+    <ChatContextProvider attemptId={attempt.id} sessionId={session?.id}>
       <div className="flex flex-col h-full min-h-0 overflow-hidden">
         {/* Chat area: use absolute positioning for reliable height */}
         <div className="flex-1 min-h-0 relative">
@@ -121,9 +119,7 @@ export function UnifiedChatView({
         <div className="shrink-0 flex flex-col items-center px-base pb-base">
           {/* Above input content (Summary & Actions, Todos) */}
           {renderAboveInput && (
-            <div className="w-chat max-w-full">
-              {renderAboveInput()}
-            </div>
+            <div className="w-chat max-w-full">{renderAboveInput()}</div>
           )}
 
           {/* Chat input */}

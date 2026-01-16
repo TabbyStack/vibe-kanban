@@ -17,7 +17,9 @@ interface UseNextActionResult {
  * Hook that extracts the latest next_action entry from normalized conversation entries.
  * Returns the most recent next_action data for displaying in the sticky Summary & Actions section.
  */
-export const useNextAction = (entries: PatchTypeWithKey[]): UseNextActionResult => {
+export const useNextAction = (
+  entries: PatchTypeWithKey[]
+): UseNextActionResult => {
   return useMemo(() => {
     let latestNextAction: NextActionData | null = null;
 

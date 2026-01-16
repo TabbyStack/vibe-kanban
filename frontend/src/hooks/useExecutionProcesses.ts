@@ -79,7 +79,15 @@ export const useExecutionProcesses = (
         run_reason: p.run_reason,
       })),
     });
-  }, [sessionId, endpoint, isConnected, isInitialized, error, isLoading, executionProcesses]);
+  }, [
+    sessionId,
+    endpoint,
+    isConnected,
+    isInitialized,
+    error,
+    isLoading,
+    executionProcesses,
+  ]);
 
   return {
     executionProcesses,

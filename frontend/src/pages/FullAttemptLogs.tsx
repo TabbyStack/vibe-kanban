@@ -9,10 +9,7 @@ import { useProjectTasks } from '@/hooks/useProjectTasks';
 import { ExecutionProcessesProvider } from '@/contexts/ExecutionProcessesContext';
 import { ReviewProvider } from '@/contexts/ReviewProvider';
 import { ClickedElementsProvider } from '@/contexts/ClickedElementsProvider';
-import {
-  ChatContextProvider,
-  ChatConversationList,
-} from '@/components/chat';
+import { ChatContextProvider, ChatConversationList } from '@/components/chat';
 import { SessionChatBoxContainer } from '@/components/ui-new/containers/SessionChatBoxContainer';
 
 export function FullAttemptLogsPage() {

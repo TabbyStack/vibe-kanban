@@ -408,7 +408,9 @@ function TaskDetailsPanelContent({
               </Alert>
             )}
 
-            <div className="flex-1 min-h-0 overflow-hidden flex flex-col">{content}</div>
+            <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
+              {content}
+            </div>
           </div>
         </ReviewProvider>
       </ClickedElementsProvider>

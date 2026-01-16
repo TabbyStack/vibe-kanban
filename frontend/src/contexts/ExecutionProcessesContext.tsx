@@ -67,7 +67,15 @@ export const ExecutionProcessesProvider: React.FC<{
       visibleCount: visible.length,
       runningVisible: isAttemptRunningVisible,
     });
-  }, [sessionId, isLoading, isConnected, error, executionProcesses.length, visible.length, isAttemptRunningVisible]);
+  }, [
+    sessionId,
+    isLoading,
+    isConnected,
+    error,
+    executionProcesses.length,
+    visible.length,
+    isAttemptRunningVisible,
+  ]);
 
   const value = useMemo<ExecutionProcessesContextType>(
     () => ({
