@@ -47,9 +47,8 @@ export function TaskSlideOverPanel({
   }, [attempts]);
 
   // Fetch the attempt with session
-  const { data: attemptWithSession } = useTaskAttemptWithSession(
-    latestAttemptId
-  );
+  const { data: attemptWithSession } =
+    useTaskAttemptWithSession(latestAttemptId);
 
   // Get stable IDs for provider key - only set when data is ready
   const attemptId = attemptWithSession?.id;

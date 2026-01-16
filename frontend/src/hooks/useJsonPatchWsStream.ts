@@ -101,7 +101,9 @@ export const useJsonPatchWsStream = <T extends object>(
       const ws = new WebSocket(wsEndpoint);
 
       ws.onopen = () => {
-        console.log('[useJsonPatchWsStream] OPENED:', { endpoint: endpoint?.slice(-60) });
+        console.log('[useJsonPatchWsStream] OPENED:', {
+          endpoint: endpoint?.slice(-60),
+        });
         setError(null);
         setIsConnected(true);
         // Reset backoff on successful connection
@@ -141,7 +143,9 @@ export const useJsonPatchWsStream = <T extends object>(
 
           // Handle Ready messages (initial data has been sent)
           if ('Ready' in msg) {
-            console.log('[useJsonPatchWsStream] READY:', { endpoint: endpoint?.slice(-50) });
+            console.log('[useJsonPatchWsStream] READY:', {
+              endpoint: endpoint?.slice(-50),
+            });
             setIsInitialized(true);
           }
 
@@ -187,7 +191,9 @@ export const useJsonPatchWsStream = <T extends object>(
     }
 
     return () => {
-      console.log('[useJsonPatchWsStream] CLEANUP:', { endpoint: endpoint?.slice(-50) });
+      console.log('[useJsonPatchWsStream] CLEANUP:', {
+        endpoint: endpoint?.slice(-50),
+      });
       if (wsRef.current) {
         const ws = wsRef.current;
 

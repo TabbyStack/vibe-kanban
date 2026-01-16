@@ -327,9 +327,7 @@ function TaskDetailsPanelContent({
               <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
                 {/* Logs container - fixed height for testing scroll */}
                 <div className="h-[400px] overflow-hidden">
-                  <div className="h-full w-full">
-                    {logs}
-                  </div>
+                  <div className="h-full w-full">{logs}</div>
                 </div>
 
                 {/* Summary & Actions - sticky above TodoPanel */}
