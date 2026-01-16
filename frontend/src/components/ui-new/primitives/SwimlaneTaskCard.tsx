@@ -12,6 +12,7 @@ import {
 import { cn } from '@/lib/utils';
 import type {
   TaskWithAttemptStatus,
+  TaskStatus,
   MergeStatus,
   CiStatus,
 } from 'shared/types';
@@ -23,11 +24,25 @@ import {
   type TaskCategory,
 } from '@/utils/categoryLabels';
 import {
+  statusLabels,
+  statusBoardColors,
+  STATUS_GROUPS,
+} from '@/utils/statusLabels';
+import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
   TooltipProvider,
 } from '@/components/ui/tooltip';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 /**
  * Returns the appropriate icon and color for a PR status
@@ -117,6 +132,7 @@ interface SwimlaneTaskCardProps {
   projectId: string;
   onClick: () => void;
   isSelected?: boolean;
+  onStatusChange?: (newStatus: TaskStatus) => void;
 }
 
 export function SwimlaneTaskCard({
@@ -124,6 +140,7 @@ export function SwimlaneTaskCard({
   projectId,
   onClick,
   isSelected,
+  onStatusChange,
 }: SwimlaneTaskCardProps) {
   const { project } = useProject();
   const { attributes, listeners, setNodeRef, transform, isDragging } =
@@ -307,15 +324,72 @@ export function SwimlaneTaskCard({
                   </TooltipContent>
                 </Tooltip>
               )}
-              <DotsThreeIcon
-                weight="bold"
-                className={cn(
-                  'size-3.5 text-low/60',
-                  'opacity-0 group-hover/card:opacity-100',
-                  'transition-all duration-150',
-                  'hover:text-normal'
-                )}
-              />
+              {/* Quick status change dropdown */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <span
+                    role="button"
+                    tabIndex={0}
+                    onClick={(e) => e.stopPropagation()}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.stopPropagation();
+                      }
+                    }}
+                    className={cn(
+                      'cursor-pointer',
+                      'opacity-0 group-hover/card:opacity-100',
+                      'transition-all duration-150',
+                      'hover:text-normal',
+                      'focus-visible:outline-none focus-visible:opacity-100'
+                    )}
+                  >
+                    <DotsThreeIcon
+                      weight="bold"
+                      className="size-3.5 text-low/60 hover:text-normal"
+                    />
+                  </span>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  align="end"
+                  className="w-48"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <DropdownMenuLabel className="text-[10px] text-low/60 font-normal">
+                    Move to status
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  {STATUS_GROUPS.map((group) => (
+                    <DropdownMenuGroup key={group.id}>
+                      <DropdownMenuLabel className="text-[10px] text-low/50 font-medium uppercase tracking-wide py-1">
+                        {group.label}
+                      </DropdownMenuLabel>
+                      {group.statuses.map((status) => (
+                        <DropdownMenuItem
+                          key={status}
+                          disabled={task.status === status}
+                          onClick={() => onStatusChange?.(status)}
+                          className="flex items-center gap-2 text-xs"
+                        >
+                          <span
+                            className="h-2 w-2 rounded-full shrink-0"
+                            style={{
+                              backgroundColor: `hsl(var(${statusBoardColors[status]}))`,
+                            }}
+                          />
+                          <span>{statusLabels[status]}</span>
+                          {task.status === status && (
+                            <CheckCircleIcon
+                              weight="fill"
+                              className="size-3 text-success ml-auto"
+                            />
+                          )}
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuGroup>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
           {task.description && (

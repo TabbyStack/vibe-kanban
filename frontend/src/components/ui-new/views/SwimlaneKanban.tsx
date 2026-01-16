@@ -25,7 +25,8 @@ import type {
 import {
   statusLabels,
   statusBoardColors,
-  statusColumnBgColors,
+  STATUS_GROUPS,
+  type StatusGroup,
 } from '@/utils/statusLabels';
 import { ProjectSwimlane } from '@/components/ui-new/containers/ProjectSwimlane';
 import { InlineGroupCreator } from '@/components/ui-new/primitives/InlineGroupCreator';
@@ -42,34 +43,33 @@ import type { SidebarWorkspace } from '@/components/ui-new/hooks/useWorkspaces';
 import { EmptyState } from '@/components/ui-new/primitives/EmptyState';
 import { SwimlaneRowSkeleton } from '@/components/ui-new/primitives/Skeleton';
 
-const STATUS_ORDER: TaskStatus[] = [
-  'todo',
-  'inprogress',
-  'inreview',
-  'done',
-  'cancelled',
-];
 
-function StatusHeader({ status }: { status: TaskStatus }) {
+// Status Group Header - displays the main column header for a status group
+function StatusGroupHeader({ group }: { group: StatusGroup }) {
   const { counts, isLoading } = useAggregateTaskCounts();
-  const count = counts[status];
+
+  // Sum counts for all statuses in this group
+  const totalCount = group.statuses.reduce(
+    (sum, status) => sum + (counts[status] || 0),
+    0
+  );
 
   return (
     <div
       className={cn(
         'group/col flex items-center gap-2',
-        'py-2 px-3',
-        'border-l border-panel/30',
+        'py-2.5 px-3',
+        'border-l border-panel/30 first:border-l-0',
         'transition-colors duration-150'
       )}
-      style={{ backgroundColor: statusColumnBgColors[status] }}
+      style={{ backgroundColor: group.bgColor }}
     >
       <span
-        className="h-2 w-2 rounded-full shrink-0 ring-2 ring-white/10"
-        style={{ backgroundColor: `hsl(var(${statusBoardColors[status]}))` }}
+        className="h-2.5 w-2.5 rounded-full shrink-0 ring-2 ring-white/10"
+        style={{ backgroundColor: `hsl(var(${group.color}))` }}
       />
-      <span className="text-[11px] text-normal/90 font-medium uppercase tracking-wide">
-        {statusLabels[status]}
+      <span className="text-xs text-normal font-semibold uppercase tracking-wide">
+        {group.label}
       </span>
       <span
         className={cn(
@@ -78,8 +78,28 @@ function StatusHeader({ status }: { status: TaskStatus }) {
           'transition-colors duration-150'
         )}
       >
-        {isLoading ? '—' : count}
+        {isLoading ? '—' : totalCount}
       </span>
+      {/* Show substatus breakdown if group has multiple statuses */}
+      {group.statuses.length > 1 && !isLoading && (
+        <div className="flex items-center gap-1 ml-1">
+          {group.statuses.map((status) => (
+            <span
+              key={status}
+              className="text-[9px] text-low/50 flex items-center gap-0.5"
+              title={statusLabels[status]}
+            >
+              <span
+                className="h-1.5 w-1.5 rounded-full"
+                style={{
+                  backgroundColor: `hsl(var(${statusBoardColors[status]}))`,
+                }}
+              />
+              <span className="tabular-nums">{counts[status] || 0}</span>
+            </span>
+          ))}
+        </div>
+      )}
       <div
         className={cn(
           'flex items-center gap-1 ml-auto',
@@ -278,23 +298,23 @@ function SwimlaneKanbanContent({
             <div className="skeleton h-6 w-20 rounded-sm" />
           </div>
         </div>
-        {/* Skeleton status header */}
+        {/* Skeleton status group header */}
         <div
           className={cn(
             'sticky top-[40px] z-10',
-            'grid grid-cols-[180px_repeat(5,minmax(120px,1fr))]',
+            'grid grid-cols-[180px_repeat(4,minmax(140px,1fr))]',
             'bg-primary/98 backdrop-blur-sm',
             'border-b border-panel/40'
           )}
         >
           <div className="py-2 px-3" />
-          {STATUS_ORDER.map((status) => (
+          {STATUS_GROUPS.map((group) => (
             <div
-              key={status}
+              key={group.id}
               className="py-2 px-3 border-l border-panel/30 flex items-center gap-2"
             >
-              <div className="skeleton size-2 rounded-full" />
-              <div className="skeleton h-3 w-16 rounded-sm" />
+              <div className="skeleton size-2.5 rounded-full" />
+              <div className="skeleton h-3 w-20 rounded-sm" />
             </div>
           ))}
         </div>
@@ -599,7 +619,7 @@ function SwimlaneKanbanContent({
         </div>
       </div>
 
-      {/* Single sticky status header */}
+      {/* Single sticky status group header */}
       <div
         className={cn(
           'sticky top-[44px] z-[20]',
@@ -610,10 +630,10 @@ function SwimlaneKanbanContent({
       >
         {/* Empty first cell - sticky on horizontal scroll to align with project names */}
         <div className="w-[180px] shrink-0 py-2 px-3 sticky left-0 z-10 bg-primary" />
-        {/* Status column headers */}
-        <div className="grid grid-cols-5 flex-1" style={{ minWidth: '700px' }}>
-          {STATUS_ORDER.map((status) => (
-            <StatusHeader key={status} status={status} />
+        {/* Status group column headers */}
+        <div className="grid grid-cols-4 flex-1" style={{ minWidth: '700px' }}>
+          {STATUS_GROUPS.map((group) => (
+            <StatusGroupHeader key={group.id} group={group} />
           ))}
         </div>
       </div>
