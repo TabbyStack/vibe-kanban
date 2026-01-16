@@ -125,7 +125,7 @@ export function UnifiedChatView({
         )}
 
         {/* Chat input */}
-        <div className={mode === 'full-screen' ? 'shrink-0 flex justify-center @container pl-px' : 'shrink-0'}>
+        <div className={mode === 'full-screen' ? 'shrink-0 flex justify-center @container pl-px pb-base' : 'shrink-0 flex justify-center px-base pb-base'}>
           <SessionChatBoxContainer
             session={session}
             taskId={task?.id}
