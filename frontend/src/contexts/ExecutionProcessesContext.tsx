@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useMemo } from 'react';
+import React, { createContext, useContext, useEffect, useMemo } from 'react';
 import { useExecutionProcesses } from '@/hooks/useExecutionProcesses';
 import type { ExecutionProcess } from 'shared/types';
 
@@ -55,6 +55,19 @@ export const ExecutionProcessesProvider: React.FC<{
       ),
     [visible]
   );
+
+  // DEBUG: Log context updates
+  useEffect(() => {
+    console.log('[ExecutionProcessesProvider] Context update:', {
+      sessionId: sessionId?.slice(0, 8),
+      isLoading,
+      isConnected,
+      error,
+      allCount: executionProcesses.length,
+      visibleCount: visible.length,
+      runningVisible: isAttemptRunningVisible,
+    });
+  }, [sessionId, isLoading, isConnected, error, executionProcesses.length, visible.length, isAttemptRunningVisible]);
 
   const value = useMemo<ExecutionProcessesContextType>(
     () => ({

@@ -8,7 +8,7 @@ import {
 } from '@virtuoso.dev/message-list';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
-import DisplayConversationEntry from '../NormalizedConversation/DisplayConversationEntry';
+import NewDisplayConversationEntry from '../ui-new/NewDisplayConversationEntry';
 import { useEntries } from '@/contexts/EntriesContext';
 import {
   AddEntryType,
@@ -56,9 +56,9 @@ const ItemContent: VirtuosoMessageListProps<
   if (data.type === 'STDERR') {
     return <p>{data.content}</p>;
   }
-  if (data.type === 'NORMALIZED_ENTRY' && attempt) {
+  if (data.type === 'NORMALIZED_ENTRY') {
     return (
-      <DisplayConversationEntry
+      <NewDisplayConversationEntry
         expansionKey={data.patchKey}
         entry={data.content}
         executionProcessId={data.executionProcessId}
@@ -116,31 +116,29 @@ const VirtualizedList = ({ attempt, task }: VirtualizedListProps) => {
   );
 
   return (
-    <div className="h-full w-full relative">
-      <ApprovalFormProvider>
-        <VirtuosoMessageListLicense
-          licenseKey={import.meta.env.VITE_PUBLIC_REACT_VIRTUOSO_LICENSE_KEY}
-        >
-          <VirtuosoMessageList<PatchTypeWithKey, MessageListContext>
-            ref={messageListRef}
-            className="h-full"
-            data={channelData}
-            initialLocation={INITIAL_TOP_ITEM}
-            context={messageListContext}
-            computeItemKey={computeItemKey}
-            ItemContent={ItemContent}
-            Header={() => <div className="h-2"></div>}
-            Footer={() => <div className="h-2"></div>}
-          />
-        </VirtuosoMessageListLicense>
-        {loading && !channelData?.data?.length && (
-          <div className="absolute inset-0 bg-primary flex flex-col gap-2 justify-center items-center">
-            <Loader2 className="h-8 w-8 animate-spin" />
-            <p>Loading History</p>
-          </div>
-        )}
-      </ApprovalFormProvider>
-    </div>
+    <ApprovalFormProvider>
+      <VirtuosoMessageListLicense
+        licenseKey={import.meta.env.VITE_PUBLIC_REACT_VIRTUOSO_LICENSE_KEY}
+      >
+        <VirtuosoMessageList<PatchTypeWithKey, MessageListContext>
+          ref={messageListRef}
+          className="h-full scrollbar-none"
+          data={channelData}
+          initialLocation={INITIAL_TOP_ITEM}
+          context={messageListContext}
+          computeItemKey={computeItemKey}
+          ItemContent={ItemContent}
+          Header={() => <div className="h-2" />}
+          Footer={() => <div className="h-2" />}
+        />
+      </VirtuosoMessageListLicense>
+      {loading && !channelData?.data?.length && (
+        <div className="absolute inset-0 bg-primary flex flex-col gap-2 justify-center items-center z-10">
+          <Loader2 className="h-8 w-8 animate-spin" />
+          <p>Loading History</p>
+        </div>
+      )}
+    </ApprovalFormProvider>
   );
 };
 
