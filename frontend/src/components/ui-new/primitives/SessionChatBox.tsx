@@ -128,6 +128,8 @@ interface SessionChatBoxProps {
   inProgressTodo?: TodoItem | null;
   /** Local images for immediate preview (before saved to server) */
   localImages?: LocalImageMetadata[];
+  /** Whether to use full width (no w-chat constraint) */
+  fullWidth?: boolean;
 }
 
 /**
@@ -151,6 +153,7 @@ export function SessionChatBox({
   executor,
   inProgressTodo,
   localImages,
+  fullWidth,
 }: SessionChatBoxProps) {
   const { t } = useTranslation('tasks');
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -493,6 +496,7 @@ export function SessionChatBox({
       isRunning={showRunningAnimation}
       onPasteFiles={actions.onPasteFiles}
       localImages={localImages}
+      fullWidth={fullWidth}
       headerLeft={
         <>
           {/* New session mode: agent icon + executor dropdown */}

@@ -101,6 +101,9 @@ export const useJsonPatchWsStream = <T extends object>(
       const ws = new WebSocket(wsEndpoint);
 
       ws.onopen = () => {
+        console.log('[useJsonPatchWsStream] OPENED:', {
+          endpoint: endpoint?.slice(-60),
+        });
         setError(null);
         setIsConnected(true);
         // Reset backoff on successful connection
@@ -118,6 +121,10 @@ export const useJsonPatchWsStream = <T extends object>(
           // Handle JsonPatch messages (same as SSE json_patch event)
           if ('JsonPatch' in msg) {
             const patches: Operation[] = msg.JsonPatch;
+            console.log('[useJsonPatchWsStream] PATCH:', {
+              endpoint: endpoint?.slice(-50),
+              patchCount: patches.length,
+            });
             const filtered = deduplicatePatches
               ? deduplicatePatches(patches)
               : patches;
@@ -136,6 +143,9 @@ export const useJsonPatchWsStream = <T extends object>(
 
           // Handle Ready messages (initial data has been sent)
           if ('Ready' in msg) {
+            console.log('[useJsonPatchWsStream] READY:', {
+              endpoint: endpoint?.slice(-50),
+            });
             setIsInitialized(true);
           }
 
@@ -158,6 +168,12 @@ export const useJsonPatchWsStream = <T extends object>(
       };
 
       ws.onclose = (evt) => {
+        console.log('[useJsonPatchWsStream] CLOSED:', {
+          endpoint: endpoint?.slice(-50),
+          code: evt?.code,
+          wasClean: evt?.wasClean,
+          finished: finishedRef.current,
+        });
         setIsConnected(false);
         wsRef.current = null;
 
@@ -175,6 +191,9 @@ export const useJsonPatchWsStream = <T extends object>(
     }
 
     return () => {
+      console.log('[useJsonPatchWsStream] CLEANUP:', {
+        endpoint: endpoint?.slice(-50),
+      });
       if (wsRef.current) {
         const ws = wsRef.current;
 

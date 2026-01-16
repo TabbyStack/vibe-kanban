@@ -18,7 +18,7 @@ import {
 } from '@/stores/useUiPreferencesStore';
 
 const MIN_WIDTH = 360;
-const MAX_WIDTH = 900;
+const MAX_WIDTH = 1600;
 const DEFAULT_WIDTH = 480;
 // Center mode uses percentage-based width for responsive sizing
 const CENTER_MAX_WIDTH = 1400;
@@ -206,11 +206,19 @@ export function SlideOverPanel({
         <div
           onMouseDown={handleResizeStart}
           className={cn(
-            'absolute left-0 top-0 bottom-0 w-1 cursor-ew-resize',
-            'hover:bg-brand/50 transition-colors',
-            isResizing && 'bg-brand'
+            'absolute -left-2 top-0 bottom-0 w-5 cursor-ew-resize group',
+            'flex items-center justify-center z-10'
           )}
-        />
+        >
+          {/* Visual indicator line */}
+          <div
+            className={cn(
+              'absolute left-2 top-0 bottom-0 w-[4px] rounded-full transition-colors',
+              'bg-transparent group-hover:bg-brand/60',
+              isResizing && 'bg-brand'
+            )}
+          />
+        </div>
       )}
 
       {/* Header */}
@@ -266,8 +274,10 @@ export function SlideOverPanel({
         )}
       </div>
 
-      {/* Content */}
-      <div className="flex-1 min-h-0 overflow-y-auto">{children}</div>
+      {/* Content - use relative/absolute pattern for reliable height in both side and center modes */}
+      <div className="flex-1 min-h-0 relative">
+        <div className="absolute inset-0 overflow-hidden">{children}</div>
+      </div>
     </>
   );
 
@@ -302,7 +312,7 @@ export function SlideOverPanel({
                 style={{
                   width: panelWidth,
                   maxWidth: `${CENTER_MAX_WIDTH}px`,
-                  maxHeight: 'calc(100vh - 80px)',
+                  height: 'calc(100vh - 80px)',
                 }}
                 className={cn(
                   'flex flex-col pointer-events-auto',

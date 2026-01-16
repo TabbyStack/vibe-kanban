@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useEffect } from 'react';
 import { useJsonPatchWsStream } from './useJsonPatchWsStream';
 import type { ExecutionProcess } from 'shared/types';
 
@@ -61,6 +61,33 @@ export const useExecutionProcesses = (
       process.status === 'running'
   );
   const isLoading = !!sessionId && !isInitialized && !error; // until first snapshot
+
+  // DEBUG: Log state changes
+  useEffect(() => {
+    console.log('[useExecutionProcesses] State:', {
+      sessionId: sessionId?.slice(0, 8),
+      endpoint: endpoint?.slice(-50),
+      enabled: !!sessionId,
+      isConnected,
+      isInitialized,
+      error,
+      isLoading,
+      processCount: executionProcesses.length,
+      processes: executionProcesses.slice(0, 5).map((p) => ({
+        id: p.id.slice(0, 8),
+        status: p.status,
+        run_reason: p.run_reason,
+      })),
+    });
+  }, [
+    sessionId,
+    endpoint,
+    isConnected,
+    isInitialized,
+    error,
+    isLoading,
+    executionProcesses,
+  ]);
 
   return {
     executionProcesses,
